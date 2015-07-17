@@ -1,2 +1,13 @@
 conf/*.conf
 !conf/flux-capacitor-defaults.conf
+
+/build/
+/bin/
+/out/
+.idea/
+.gradle/
+.settings/
+.classpath
+.project
+*.iml
+*.ipr

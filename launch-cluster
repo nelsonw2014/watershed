@@ -44,6 +44,8 @@ EMR_BOOTSTRAP_ACTIONS="${EMR_BA_DRILL} ${EMR_BA_DRILL_LIB_AWS} ${EMR_BA_HIVE_MET
 
 EMR_CONFIG_STEPS="Name=hive_create_table_for_stream,Type=HIVE,Args=[-f,${RESOURCES_S3_URL}/emr/hive/create_table_for_stream,-hiveconf,tablename=${STREAM_HIVE_TABLE_NAME},-hiveconf,streamname=${STREAM_NAME}]"
 
+EMR_INSTANCE_GROUPS="${EMR_INSTANCE_GROUP_MASTER} ${EMR_INSTANCE_GROUP_CORE} ${EMR_INSTANCE_GROUP_TASK}"
+
 aws --profile "${AWS_PROFILE}" emr create-cluster \
  --ami-version ${EMR_AMI_VERSION} \
  --instance-groups ${EMR_INSTANCE_GROUPS} \

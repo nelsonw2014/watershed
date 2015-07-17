@@ -21,7 +21,6 @@
 # For alternative methods of connecting, see
 # http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/emr-connect-master-node.html
 
-LAUNCHER_HOME=$(dirname $0)
 CONFIGFILE=$1
 if [ -z "${CONFIGFILE}" ]; then
     echo "Lauches a cluster and prints the cluster-id on stdout."

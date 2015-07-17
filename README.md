@@ -67,8 +67,9 @@ by following the directions at the top of **conf/defaults.conf**
 printed to stdout; future commands will require it.
 * Run **./wait-until-ready &lt;cluster-id&gt;**
 * Run **./forward-local-ports &lt;cluster-id&gt; &lt;private-key-file&gt;**
- * As with any new SSH host, you will have to accept an authenticity warning the
-first time you connect to a cluster.
+ * As with any unfamiliar SSH host, on most systems you will be asked to accept a host authenticity warning the
+first time you connect to a cluster. You can avoid this by adding the arguments **-o StrictHostKeyChecking=no** .
  * Once it's forwarding, this process will not exit, nor print any output.
 * Run **./terminate-clusters &lt;cluster-id&gt;** when done to avoid recurring charges.
-* For additional advanced operations, explore the **emr** subcommand of the AWS CLI.
+* For additional cluster management operations, explore the **emr** sub-command of the AWS CLI, or log on to the AWS web
+console and browse to the EMR service page.

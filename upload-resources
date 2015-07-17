@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-LAUNCHER_HOME=${PWD}
+LAUNCHER_HOME=$(dirname $0)
 CONFIGFILE=$1
 if [ -z "${CONFIGFILE}" ]; then
     echo "Uploads resources required for cluster launch into an S3 bucket."

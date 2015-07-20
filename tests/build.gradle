@@ -6,7 +6,7 @@ apply plugin: "maven"
 
 project.ext {
     groovyVersion = "2.3.7"
-    drillVersion = "1.1.0"
+    drillVersion = "1.0.0"
 }
 
 task wrapper(type: Wrapper) {
@@ -33,7 +33,9 @@ dependencies {
 
     runtime(
             "ch.qos.logback:logback-classic:1.1.2",
-            "org.apache.drill.exec:drill-jdbc-all:${drillVersion}"
+// Replace local file with coordinates after upgrading Drill to 1.1.0+
+//            "org.apache.drill.exec:drill-jdbc-all:${drillVersion}"
+            files("lib/drill-jdbc-all-${drillVersion}.jar")
     )
 }
 

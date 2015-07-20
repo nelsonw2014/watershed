@@ -1,9 +1,14 @@
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 import java.util.concurrent.TimeUnit
 
 /**
  * @author pmogren
  */
 class Shell {
+    Logger logger = LoggerFactory.getLogger("Shell")
+
     /**
      * Runs a process shell-style, pipes its output, and terminates it after a timeout.
      *
@@ -15,7 +20,7 @@ class Shell {
      * @return process exit code, or {@code null} if the process did not terminate within the timeout.
      */
     Integer execute(PrintStream output, int timeout, TimeUnit timeoutUnit, String... command) {
-        println "Running command ${Arrays.asList(command)}"
+        logger.info("Running command ${Arrays.asList(command)}")
         def process = new ProcessBuilder(command).redirectErrorStream(true).start()
         process.inputStream.eachLine { output.println(it) }
         boolean terminated = process.waitFor(timeout, timeoutUnit)
@@ -26,7 +31,7 @@ class Shell {
     }
 
     Process executeInBackground(PrintStream output, String... command) {
-        println "Running command ${Arrays.asList(command)}"
+        logger.info("Running command ${Arrays.asList(command)}")
         def process = new ProcessBuilder(command).redirectErrorStream(true).start()
         new Thread({ process.inputStream.eachLine { output.println(it) } }, "Process output tailer").start()
         return process

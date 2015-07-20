@@ -1,3 +1,6 @@
+import groovy.sql.Sql
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
@@ -9,6 +12,7 @@ import java.util.concurrent.TimeUnit
  * @author pmogren
  */
 class LaunchAndQueryClusterSpec extends Specification {
+    Logger logger = LoggerFactory.getLogger("LaunchAndQueryClusterSpec")
     String clusterId
 
     def "launch cluster and issue queries"() {
@@ -60,12 +64,44 @@ class LaunchAndQueryClusterSpec extends Specification {
                 "${launcherHome}/forward-local-ports", "${clusterId}", "${privateKeyFile}", "-T",
                 "-o", "StrictHostKeyChecking=no", "-o", "BatchMode=yes")
 
+        then:
+        noExceptionThrown()
+
         then: "Port forwarding is active"
         Thread.sleep(1000)
         forwardingProcess.alive
-        Socket socket = new Socket((String) null, 31010)
+
+        when: "Test socket connectivity on Drill user port"
+        def maxTries = 60
+        def socket
+        for (i in 1..maxTries) {
+            try {
+                socket = new Socket("localhost", 31010)
+            } catch (ConnectException ce) {
+                if (i == maxTries) {
+                    throw new IllegalStateException("Repeatedly failed to open a socket to Drill", ce)
+                }
+                Thread.sleep(1000)
+            }
+        }
+
+        then:
+        noExceptionThrown()
+
+        then:
         socket.connected
-        socket.close()
+
+        when: "Connect to database and query a built-in resource"
+        def db = [url: "jdbc:drill:drillbit=localhost:31010", user: "admin", password: "admin", driver: "org.apache.drill.jdbc.Driver"]
+        def sql = Sql.newInstance(db.url, db.user, db.password, db.driver)
+        def rs = sql.rows("SELECT COUNT(employee_id) cnt FROM cp.`employee.json`")
+
+        then:
+        noExceptionThrown()
+
+        then: "Query result is correct"
+        rs.size() == 1
+        rs[0].getProperty("cnt") == 1155
 
 /*
         when:
@@ -90,12 +126,13 @@ class LaunchAndQueryClusterSpec extends Specification {
 */
 
         cleanup:
+        logger.info("Cleaning up.")
         if (forwardingProcess?.alive) {
-            println "Killing port-forwarding process."
+            logger.info("Killing port-forwarding process.")
             forwardingProcess.destroy()
         }
         if (clusterId) {
-            println "Terminating cluster."
+            logger.info("Terminating cluster ${clusterId}.")
             new Shell().execute(System.out, 1, TimeUnit.MINUTES,
                     "${launcherHome}/terminate-clusters", "${clusterId}")
         }

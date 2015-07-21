@@ -24,5 +24,5 @@ if [ -z "${CONFIGFILE}" ]; then
 fi
 . ${CONFIGFILE}
 
-aws --profile ${AWS_PROFILE} s3 mb ${RESOURCES_S3_URL}
-aws --profile ${AWS_PROFILE} s3 sync ${LAUNCHER_HOME}/resources/s3/ ${RESOURCES_S3_URL}
+aws --profile ${AWS_PROFILE} s3 mb ${RESOURCES_S3_URL} && \
+ aws --profile ${AWS_PROFILE} s3 sync $(dirname $0)/resources/s3/ ${RESOURCES_S3_URL}

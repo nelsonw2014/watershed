@@ -62,8 +62,8 @@ credentials and default region (you can run **aws configure** to do so interacti
  * Make a copy of **conf/defaults.conf** and edit the copy, or
  * Create a new file that will contain only overrides, and import the defaults
 by following the directions at the top of **conf/defaults.conf**
-* Run **./upload-resources &lt;config file&gt;**
-* Run **./launch-cluster &lt;config file&gt;** and note the cluster-id that is
+* Run **./upload-resources &lt;config-file&gt;**
+* Run **./launch-cluster &lt;config-file&gt;** and note the cluster-id that is
 printed to stdout; future commands will require it.
 * Run **./wait-until-ready &lt;cluster-id&gt;**
 * Run **./forward-local-ports &lt;cluster-id&gt; &lt;private-key-file&gt;**

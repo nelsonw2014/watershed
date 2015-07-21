@@ -13,4 +13,5 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-CREATE TABLE ${hiveconf:tablename} (record STRING) STORED BY 'com.amazon.emr.kinesis.hive.KinesisStorageHandler' TBLPROPERTIES('kinesis.stream.name'='${hiveconf:streamname}');
+CREATE TABLE ${hiveconf:tablename} (record STRING) STORED BY 'com.amazon.emr.kinesis.hive.KinesisStorageHandler'
+TBLPROPERTIES('kinesis.stream.name'='${hiveconf:streamname}', 'kinesis.nodata.timeout'='1');

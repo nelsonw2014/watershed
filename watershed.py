@@ -136,7 +136,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     config = dict()
     if hasattr(args, 'which'):
-        if hasattr(args.config_file):
+        if hasattr(args, 'config_file'):
             config = load_configuration(args.config_file)
 
         if args.which == "upload-resources":

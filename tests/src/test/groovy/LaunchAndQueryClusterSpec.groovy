@@ -19,12 +19,12 @@ class LaunchAndQueryClusterSpec extends Specification {
         given: "Test configuration"
         String launcherHome = System.getProperty("launcherHome")
         if (!launcherHome || !new File(launcherHome).isDirectory()) {
-            throw new IllegalArgumentException("You must set the system property launcherHome to a git repo containing commercehub-oss/flux-capacitor. It was: ${launcherHome}")
+            throw new IllegalArgumentException("You must set the system property launcherHome to a git repo containing commercehub-oss/watershed. It was: ${launcherHome}")
         }
 
         String launcherConfig = System.getProperty("launcherConfig")
         if (!launcherConfig || !new File(launcherConfig).isFile()) {
-            throw new IllegalArgumentException("You must set the system property launcherConfig to a configuration file for commercehub-oss/flux-capacitor. It was: ${launcherConfig}")
+            throw new IllegalArgumentException("You must set the system property launcherConfig to a configuration file for commercehub-oss/watershed. It was: ${launcherConfig}")
         }
 
         String privateKeyFile = System.getProperty("privateKeyFile")

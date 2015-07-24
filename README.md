@@ -1,4 +1,6 @@
-# flux-capacitor
+# watershed
+Data streams drain into a data reservoir so they can be used later or combined together.
+
 Without using any costly database, this solution complements
 [Amazon Kinesis](http://aws.amazon.com/kinesis/) with the following capabilities:
 * Long-term archival of records.

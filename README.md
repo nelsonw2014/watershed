@@ -58,6 +58,7 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
 * Python 3.4
 * Boto3 (pip3 install boto3)
 * sshtunnel (pip3 install sshtunnel)
+
 # Getting Started
 * Create a config file. Either:
  * Make a copy of **conf/defaults.json** and edit the copy

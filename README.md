@@ -60,7 +60,7 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
 * sshtunnel (pip3 install sshtunnel)
 
 # Getting Started
-* Create a config file. Either:
+* Create a config file. 
  * Make a copy of **conf/defaults.json** and edit the copy
 * Run **python3 watershed.py upload-resources -c &lt;config-file&gt;**
 * Run **python3 watershed.py launch-cluster -c &lt;config-file&gt;** and note the cluster-id that is

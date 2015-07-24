@@ -53,25 +53,22 @@ by Apache Drill.
 * To the greatest extent possible without storing another copy of the data,
 provide a unified and de-duplicated view spanning current and archived Amazon Kinesis records.
 * (TBD) Provide a basic UI or API to initiate search and replay operations, and monitor progress.
-
+ 
 # Prerequisites
-* Bash shell installed at **/bin/bash**
-* [AWS CLI](http://aws.amazon.com/cli/) installed and configured with your
-credentials and default region (you can run **aws configure** to do so interactively)
-
+* Python 3.4
+* Boto3 (pip3 install boto3)
+* sshtunnel (pip3 install sshtunnel)
 # Getting Started
 * Create a config file. Either:
- * Make a copy of **conf/defaults.conf** and edit the copy, or
- * Create a new file that will contain only overrides, and import the defaults
-by following the directions at the top of **conf/defaults.conf**
-* Run **./upload-resources &lt;config-file&gt;**
-* Run **./launch-cluster &lt;config-file&gt;** and note the cluster-id that is
+ * Make a copy of **conf/defaults.json** and edit the copy
+* Run **python3 watershed.py upload-resources -c &lt;config-file&gt;**
+* Run **python3 watershed.py launch-cluster -c &lt;config-file&gt;** and note the cluster-id that is
 printed to stdout; future commands will require it.
-* Run **./wait-until-ready &lt;cluster-id&gt;**
-* Run **./forward-local-ports &lt;cluster-id&gt; &lt;private-key-file&gt;**
- * As with any unfamiliar SSH host, on most systems you will be asked to accept a host authenticity warning the
-first time you connect to a cluster. You can avoid this by adding the arguments **-o StrictHostKeyChecking=no** .
- * Once it's forwarding, this process will not exit, nor print any output.
-* Run **./terminate-clusters &lt;cluster-id&gt;** when done to avoid recurring charges.
+ * **-w** will wait until cluster is ready before exiting
+* Run **python3 watershed.py forward-local-ports -i &lt;cluster-id&gt; -k &lt;private-key-file&gt;**
+ * Ctrl-C will stop the forwarding at any time.
+ * **-p &lt;profile&gt;** will use a non-default profile to connect to aws
+* Run **python3 watershed.py terminate-clusters -i &lt;cluster-id&gt; &#91;&lt;cluster-id&gt; ...&#93;** when done to avoid recurring charges.
+ * **-p &lt;profile&gt;** will use a non-default profile to connect to aws
 * For additional cluster management operations, explore the **emr** sub-command of the AWS CLI, or log on to the AWS web
 console and browse to the EMR service page.

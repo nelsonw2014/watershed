@@ -2,7 +2,7 @@
   "AWS": {
     "S3": {
       "resourcesBucket": "emr-resources",
-      "resourcesDirectory": "resources"
+      "resourcesPrefix": "resources"
     },
     "EMR": {
       "clusterName": "stream-archival",
@@ -10,11 +10,9 @@
         "service": "EMR-Role-Name",
         "ec2": "EMR-EC2-Resource-Role-Name"
       },
-      "ec2KeyName": "key-pair-name",
-      "ec2SubnetId": "subnet-a9999aa9",
-      "additionalMasterSecurityGroups": [
-        "sg-9aa9999a"
-      ],
+      "ec2KeyName": null,
+      "ec2SubnetId": null,
+      "additionalMasterSecurityGroups": [],
       "amiVersion": "3.8.0",
       "archivalDfsUrl": "s3n://AccessKey:SecretKey@stream-archival",
       "archivesPath": "/stream-archives",

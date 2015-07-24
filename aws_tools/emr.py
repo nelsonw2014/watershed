@@ -31,7 +31,7 @@ def get_master_address(cluster_id, profile='default'):
 def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_until_ready=False):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
-    s3_url = "s3://"+s3_config['resourcesBucket']+"/"+s3_config['resourcesDirectory']
+    s3_url = "s3://"+s3_config['resourcesBucket']+"/"+s3_config['resourcesPrefix']
 
     bootstrap_actions = [
         {

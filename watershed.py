@@ -21,9 +21,9 @@ from ssh_tools.ssh import forward_necessary_ports
 
 def parse_arguments():
     _fc_description = """
-Python/Boto solution which compliments kinesis with:
+Python/Boto solution which compliments Amazon Kinesis with:
   - Long-term archival of records
-  - Making current and archived records accesible to SQL-based exploration and analysis
+  - Making current and archived records accessible to SQL-based exploration and analysis
   - Replay of archived records:
     + supports key-value compaction
     + supports bounded replay
@@ -46,7 +46,7 @@ Python/Boto solution which compliments kinesis with:
     ]
     _cluster_id_kwargs = dict(
         action="store",
-        help="Specify the cluster id for the operation to be preformed on",
+        help="Specify the cluster id for the operation to be performed on",
         required=True,
         type=str
     )
@@ -83,7 +83,7 @@ Python/Boto solution which compliments kinesis with:
     upload_resources_parser.set_defaults(which="upload-resources")
     upload_resources_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     upload_resources_parser.add_argument(
-        '-F',
+        '-f',
         '--force-upload',
         action="store_const",
         const=True,
@@ -100,7 +100,7 @@ Python/Boto solution which compliments kinesis with:
         '--wait-until-ready',
         action="store_const",
         const=True,
-        help="Wait until cluster launches (takes up to 10 minutes at most)"
+        help="Wait until cluster launches (takes five minutes or more)"
     )
     forward_local_ports_parser = subparsers.add_parser(
         'forward-local-ports',
@@ -112,7 +112,7 @@ Python/Boto solution which compliments kinesis with:
     forward_local_ports_parser.add_argument(*_profile_args, **_profile_kwargs)
     terminate_clusters_parser = subparsers.add_parser(
         'terminate-clusters',
-        help="Terminate the cluster(s) that are associated with the provided luster ID(s)"
+        help="Terminate the cluster(s) that are associated with the provided cluster ID(s)"
     )
     terminate_clusters_parser.set_defaults(which="terminate-clusters")
     terminate_clusters_parser.add_argument(

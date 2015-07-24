@@ -34,7 +34,7 @@ class LaunchAndQueryClusterSpec extends Specification {
 
         when: "Uploading resources"
         Integer exitCode = new Shell().execute(System.out, 1, TimeUnit.MINUTES,
-            "python3", "${launcherHome}/watershed.py", "upload-resources", "-c", "${launcherConfig}", '-F')
+            "python3", "${launcherHome}/watershed.py", "upload-resources", "-c", "${launcherConfig}", '-f')
 
         then: "Resources uploaded"
         exitCode == 0

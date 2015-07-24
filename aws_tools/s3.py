@@ -23,7 +23,7 @@ def upload_resources(s3_config=None, profile="default", force_upload=False):
         file_upload_count = 0
         project_root = os.path.dirname(os.path.abspath(__file__)).replace('/aws_tools', '/')
         if s3_resource.Bucket(s3_config['resourcesBucket']) in s3_resource.buckets.all() and not force_upload:
-            raise ValueError("Bucket already exists, run with -F to force upload.")
+            raise ValueError("Bucket already exists, run with -f to force upload.")
         s3_resource.create_bucket(Bucket=s3_config['resourcesBucket'])
         for folder in os.walk(project_root+'resources/s3'):
             # for all directories within the local_resources_directory
@@ -31,7 +31,7 @@ def upload_resources(s3_config=None, profile="default", force_upload=False):
                 # if there are files in the directory
                 for file in folder[2]:
                     # for every file in the directory
-                    s3_file_path = s3_config['resourcesDirectory']+folder[0].split('resources/s3')[1]+"/"+file
+                    s3_file_path = s3_config['resourcesPrefix']+folder[0].split('resources/s3')[1]+"/"+file
                     s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=open(folder[0]+'/'+file, 'rb'))
                     file_upload_count += 1
         print("Upload Successful, {0} files uploaded.".format(file_upload_count))

@@ -34,7 +34,7 @@ class LaunchAndQueryClusterSpec extends Specification {
 
         when: "Uploading resources"
         Integer exitCode = new Shell().execute(System.out, 1, TimeUnit.MINUTES,
-            "${launcherHome}/upload-resources", "${launcherConfig}")
+            "python3", "${launcherHome}/watershed.py", "upload-resources", "-c", "${launcherConfig}", '-f')
 
         then: "Resources uploaded"
         exitCode == 0
@@ -42,28 +42,21 @@ class LaunchAndQueryClusterSpec extends Specification {
         when: "Launching a cluster"
         def capturedOutputStream = new ByteArrayOutputStream()
         exitCode = new Shell().execute(new PrintStream(capturedOutputStream), 1, TimeUnit.MINUTES,
-                "${launcherHome}/launch-cluster", "${launcherConfig}")
+                "python3", "${launcherHome}/watershed.py", "launch-cluster", "-c", "${launcherConfig}", "-w")
         String capturedOutput = capturedOutputStream.toString()
         System.out.print(capturedOutput)
-        if (capturedOutput.matches(/j-\w+\r?\n/)) {
-            this.clusterId = capturedOutput.split("\r?\n")[0]
+        if (capturedOutput.contains('j-')) {
+            this.clusterId = capturedOutput.split("Cluster '")[1].split("' ready")[0]
         }
 
         then: "Cluster launched"
         exitCode == 0
         clusterId
 
-        when: "Waiting for cluster to be ready"
-        exitCode = new Shell().execute(System.out, 20, TimeUnit.MINUTES,
-                "${launcherHome}/wait-until-ready", "${clusterId}")
-
-        then: "Cluster is ready"
-        exitCode == 0
-
         when: "Forward local ports to cluster with SSH"
         Process forwardingProcess = new Shell().executeInBackground(System.out,
-                "${launcherHome}/forward-local-ports", "${clusterId}", "${privateKeyFile}", "-T",
-                "-o", "StrictHostKeyChecking=no", "-o", "BatchMode=yes")
+                "python3", "${launcherHome}/watershed.py", "forward-local-ports", "-i", "${clusterId}",
+                "-k", "${privateKeyFile}")
 
         then:
         noExceptionThrown()
@@ -113,7 +106,7 @@ class LaunchAndQueryClusterSpec extends Specification {
         if (clusterId) {
             logger.info("Terminating cluster ${clusterId}.")
             new Shell().execute(System.out, 1, TimeUnit.MINUTES,
-                    "${launcherHome}/terminate-clusters", "${clusterId}")
+                    "python3", "${launcherHome}/watershed.py", "terminate-clusters", "-i", "${clusterId}")
         }
         if (socket?.connected) {
             socket.close()

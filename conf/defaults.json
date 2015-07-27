@@ -1,0 +1,52 @@
+{
+  "AWS": {
+    "S3": {
+      "resourcesBucket": "emr-resources",
+      "resourcesPrefix": "resources"
+    },
+    "EMR": {
+      "clusterName": "stream-archival",
+      "roles": {
+        "service": "EMR-Role-Name",
+        "ec2": "EMR-EC2-Resource-Role-Name"
+      },
+      "ec2KeyName": null,
+      "ec2SubnetId": null,
+      "additionalMasterSecurityGroups": [],
+      "amiVersion": "3.8.0",
+      "archivalDfsUrl": "s3n://AccessKey:SecretKey@stream-archival",
+      "archivesPath": "/stream-archives",
+      "archiveName": "event_archive",
+      "instanceGroups": [
+        {
+          "InstanceRole": "MASTER",
+          "InstanceCount": 1,
+          "InstanceType": "m3.xlarge"
+        },
+        {
+          "InstanceRole": "CORE",
+          "InstanceCount": 1,
+          "InstanceType": "m3.xlarge"
+        },
+        {
+          "InstanceRole": "TASK",
+          "InstanceCount": 1,
+          "InstanceType": "m3.xlarge"
+        }
+      ],
+      "hive":{
+        "tableName": "AppEvent"
+      },
+      "kinesis": {
+        "streamName": "AppEventStream"
+      },
+      "tags":[
+        {
+          "Key": "Name",
+          "Value": "stream-archival"
+        }
+      ]
+    },
+    "profile": "default"
+  }
+}

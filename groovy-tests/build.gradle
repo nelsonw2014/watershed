@@ -40,6 +40,12 @@ dependencies {
 }
 
 tasks.withType(Test) {
+    systemProperties = [
+            'launcherConfig': System.getProperty('launcherConfig', '/Users/wnelson/Documents/Projects/warren-archival.json'),
+            'privateKeyFile': System.getProperty('privateKeyFile', '/Users/wnelson/keys/ec2-keypair.pem'),
+            'launcherHome': System.getProperty('launcherHome', '/Users/wnelson/Documents/Projects/flux-capacitor')
+    ]
+
     systemProperty "launcherHome", new File("${rootProject.projectDir}/..").canonicalPath
     if (project.hasProperty("launcherConfig")) {
         systemProperty "launcherConfig", new File("${launcherConfig}").canonicalPath

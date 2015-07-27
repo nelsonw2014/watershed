@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Copyright (C) 2015 Commerce Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +16,13 @@
 
 import argparse
 import json
+import os
 from aws_tools.s3 import upload_resources
 from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster
 from ssh_tools.ssh import forward_necessary_ports
 
 
-def parse_arguments():
+def get_argument_parser():
     _fc_description = """
 Python/Boto solution which compliments Amazon Kinesis with:
   - Long-term archival of records
@@ -70,7 +73,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
 
     parser = argparse.ArgumentParser(
-        prog="Watershed",
+        prog=os.path.basename(__file__),
         description=_fc_description,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -126,14 +129,14 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
 
-    return parser.parse_args()
+    return parser
 
 
 def load_configuration(configuration_file):
     return json.load(configuration_file)
 
 if __name__ == "__main__":
-    args = parse_arguments()
+    args = get_argument_parser().parse_args()
     config = dict()
     if hasattr(args, 'which'):
         if hasattr(args, 'config_file'):
@@ -164,4 +167,5 @@ if __name__ == "__main__":
                 args.profile
             )
     else:
-        raise ValueError("No command specified.")
+        get_argument_parser().print_help()
+        exit(2)

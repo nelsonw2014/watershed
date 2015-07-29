@@ -113,7 +113,7 @@ end
 
     File.open('/tmp/drillbit', 'w') do |f|
     f.write(<<EOF
-/home/hadoop/drill/bin/drillbit.sh $@
+su -l hadoop -c "/home/hadoop/drill/bin/drillbit.sh $@"
 EOF
 )
 end

@@ -2,7 +2,9 @@
   "AWS": {
     "S3": {
       "resourcesBucket": "emr-resources",
-      "resourcesPrefix": "resources"
+      "resourcesPrefix": "resources",
+      "accessKey": "accessKey",
+      "secretKey": "secretKey"
     },
     "EMR": {
       "clusterName": "stream-archival",

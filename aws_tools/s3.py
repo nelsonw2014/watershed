@@ -14,6 +14,7 @@
 
 import boto3
 import os
+import json
 
 
 def upload_resources(s3_config=None, profile="default", force_upload=False):
@@ -35,5 +36,22 @@ def upload_resources(s3_config=None, profile="default", force_upload=False):
                     s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=open(folder[0]+'/'+file, 'rb'))
                     file_upload_count += 1
         print("Upload Successful, {0} files uploaded.".format(file_upload_count))
+    except Exception as aws_except:
+        raise ValueError(aws_except)
+
+
+def upload_stream_archive_configuration(s3_config=None, configs=None, profile="default"):
+    s3_resource = boto3.session.Session(profile_name=profile).resource('s3')
+    paths = []
+    try:
+        file_upload_count = 0
+        for config in configs:
+            s3_file_path = s3_config['resourcesPrefix']+'/configs/'+config['name']+'.json'
+            byte_output = str.encode(json.dumps(config))
+            s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=byte_output)
+            paths.append(s3_file_path)
+            file_upload_count += 1
+        print("Upload Successful, {0} files uploaded.".format(file_upload_count))
+        return paths
     except Exception as aws_except:
         raise ValueError(aws_except)

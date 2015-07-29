@@ -71,12 +71,48 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
             }
         },
         {
-            'Name': 'configure_drill_storage_stream_archives',
+            'Name': 'Install Pip',
             'ScriptBootstrapAction': {
-                'Path': s3_url+'/emr/exec/configure_drill_storage_stream_archives',
+                'Path': 'file:/usr/bin/sudo',
                 'Args': [
-                    emr_config['archivalDfsUrl'],
-                    emr_config['archivesPath']
+                    'yum',
+                    'install',
+                    '-y',
+                    'python-pip'
+                ]
+            }
+        },
+        {
+            'Name': 'Update Pip',
+            'ScriptBootstrapAction': {
+                'Path': 'file:/usr/bin/sudo',
+                'Args': [
+                    'pip',
+                    'install',
+                    '--upgrade',
+                    'pip'
+                ]
+            }
+        },
+        {
+            'Name': 'Fix Pip /usr/bin entry',
+            'ScriptBootstrapAction': {
+                'Path': 'file:/usr/bin/sudo',
+                'Args': [
+                    'cp',
+                    '/usr/local/bin/pip2.6',
+                    '/usr/bin/pip-2.6'
+                ]
+            }
+        },
+        {
+            'Name': 'Install simples3',
+            'ScriptBootstrapAction': {
+                'Path': 'file:/usr/bin/sudo',
+                'Args': [
+                    'pip-2.6',
+                    'install',
+                    'simples3'
                 ]
             }
         }
@@ -189,3 +225,77 @@ def create_tables(cluster_id, s3_config=None, stream_config_folder=None, profile
     except Exception as aws_except:
         raise ValueError(aws_except)
 
+
+def configure_storage_stream_archives(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
+    buckets = {}
+    stream_configs = []
+    for folder in os.walk(stream_config_folder):
+        # for all directories within the local_resources_directory
+        if folder[2]:
+            # if there are files in the directory
+            for file in folder[2]:
+
+                with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
+                    stream_configs.append(json.load(stream_config_fp))
+    for stream in stream_configs:
+        bucket_name = stream['s3n']['archivalDfsUrl']
+        archive_path = stream['s3n']['archivesPath']
+        if bucket_name not in buckets:
+            buckets[bucket_name] = []
+        if archive_path not in buckets[bucket_name]:
+            buckets[bucket_name].append(archive_path)
+
+    conf_files = []
+    for bucket in buckets.keys():
+        conf_file = {
+            "name": bucket.split('@')[1],
+            "config": {
+                "type": "file",
+                "enabled": "true",
+                "connection": bucket,
+                "workspaces": {},
+                "formats": None
+            }
+        }
+
+        for archive_path in buckets[bucket]:
+            conf_file["config"]["workspaces"][archive_path] = {
+                "location": archive_path,
+                "writable": False
+            }
+        conf_files.append(conf_file)
+
+    config_paths = upload_stream_archive_configuration(s3_config, conf_files, profile)
+
+    emr_client = boto3.session.Session(profile_name=profile).client('emr')
+
+    s3_url = "s3://" + s3_config['resourcesBucket'] + "/" + s3_config['resourcesPrefix']
+
+    args_list = [
+        s3_url + '/emr/python/upload_drill_storage_configuration.py',
+        s3_config["resourcesBucket"],
+        s3_config["accessKey"],
+        s3_config["secretKey"]
+    ]
+
+    args_list += config_paths
+
+    new_step = {
+        'Name': 'configure_drill_storage_stream_archives',
+        'HadoopJarStep': {
+            'Jar': "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar",
+            'Args': args_list
+        },
+        'ActionOnFailure': 'CANCEL_AND_WAIT'
+    }
+
+    try:
+        return_json = emr_client.add_job_flow_steps(
+            JobFlowId=cluster_id,
+            Steps=[
+                new_step
+            ]
+        )
+        print(return_json)
+    except Exception as aws_except:
+        raise ValueError(aws_except)

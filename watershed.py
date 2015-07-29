@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, create_table
+from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, create_tables
 from ssh_tools.ssh import forward_necessary_ports
 
 
@@ -133,18 +133,18 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
     create_table_parser = subparsers.add_parser(
-        'create-table',
+        'create-tables',
         aliases=['c'],
         help="Send create table step to a cluster."
     )
     create_table_parser.set_defaults(which="create-table")
     create_table_parser.add_argument(
         '-s',
-        '--stream-file',
+        '--stream-folder',
         action="store",
-        help="Specify the configuration json for the stream",
+        help="Specify the configuration folder for the streams",
         required=True,
-        type=argparse.FileType('r')
+        type=str
     )
     create_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     create_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
@@ -187,10 +187,10 @@ if __name__ == "__main__":
                 args.profile
             )
         elif args.which == "create-table":
-            create_table(
+            create_tables(
                 args.cluster_id,
                 config['AWS']['S3'],
-                load_configuration(args.stream_file),
+                args.stream_folder,
                 config['AWS']['profile']
             )
 

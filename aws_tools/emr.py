@@ -13,6 +13,9 @@
 # limitations under the License.
 
 import boto3
+import os
+import json
+from aws_tools.s3 import upload_stream_archive_configuration
 
 
 def get_master_address(cluster_id, profile='default'):
@@ -80,26 +83,7 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
     ]
 
     steps = [
-        {
-            'Name': 'hive_create_table_for_stream',
-            'HadoopJarStep': {
-                'Jar': "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar",
-                'Args': [
-                    "s3://us-east-1.elasticmapreduce/libs/hive/hive-script",
-                    "--run-hive-script",
-                    "--hive-versions",
-                    "latest",
-                    "--args",
-                    '-f',
-                    s3_url+'/emr/hive/create_table_for_stream',
-                    '-hiveconf',
-                    'tablename='+emr_config['hive']['tableName'],
-                    '-hiveconf',
-                    'streamname='+emr_config['kinesis']['streamName']
-                ]
-            },
-            'ActionOnFailure': 'CANCEL_AND_WAIT'
-        },
+
         {
             'Name': 'Install Hive',
             'HadoopJarStep': {
@@ -160,41 +144,48 @@ def terminate_emr_cluster(cluster_ids=None, profile='default'):
         raise ValueError(aws_except)
 
 
-def create_table(cluster_id, s3_config=None, stream_config=None, profile='default'):
+def create_tables(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
     s3_url = "s3://" + s3_config['resourcesBucket'] + "/" + s3_config['resourcesPrefix']
+    stream_configs = []
+    for folder in os.walk(stream_config_folder):
+        # for all directories within the local_resources_directory
+        if folder[2]:
+            # if there are files in the directory
+            for file in folder[2]:
 
-    new_step = {
-        'Name': 'hive_create_table_' + stream_config['tableName'] + '_for_stream_' + stream_config['streamName'],
-        'HadoopJarStep': {
-            'Jar': "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar",
-            'Args': [
-                "s3://us-east-1.elasticmapreduce/libs/hive/hive-script",
-                "--run-hive-script",
-                "--hive-versions",
-                "latest",
-                "--args",
-                '-f',
-                s3_url + '/emr/hive/create_table_for_stream',
-                '-hiveconf',
-                'tablename=' + stream_config['tableName'],
-                '-hiveconf',
-                'streamname=' + stream_config['streamName']
-            ]
-        },
-        'ActionOnFailure': 'CANCEL_AND_WAIT'
-    }
+                with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
+                    stream_configs.append(json.load(stream_config_fp))
+    steps_to_add = []
+    for stream_config in stream_configs:
+        steps_to_add.append({
+            'Name': 'hive_create_table_' + stream_config['tableName'] + '_for_stream_' + stream_config['streamName'],
+            'HadoopJarStep': {
+                'Jar': "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar",
+                'Args': [
+                    "s3://us-east-1.elasticmapreduce/libs/hive/hive-script",
+                    "--run-hive-script",
+                    "--hive-versions",
+                    "latest",
+                    "--args",
+                    '-f',
+                    s3_url + '/emr/hive/create_table_for_stream',
+                    '-hiveconf',
+                    'tablename=' + stream_config['tableName'],
+                    '-hiveconf',
+                    'streamname=' + stream_config['streamName']
+                ]
+            },
+            'ActionOnFailure': 'CANCEL_AND_WAIT'
+        })
 
     try:
         return_json = emr_client.add_job_flow_steps(
             JobFlowId=cluster_id,
-            Steps=[
-                new_step
-            ]
+            Steps=steps_to_add
         )
         print(return_json)
     except Exception as aws_except:
         raise ValueError(aws_except)
-
 

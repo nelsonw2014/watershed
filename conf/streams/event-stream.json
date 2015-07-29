@@ -1,0 +1,9 @@
+{
+  "tableName": "AppEvent",
+  "streamName": "AppEventStream",
+  "s3n":{
+    "archivalDfsUrl": "s3n://AccessKey:SecretKey@stream-archival",
+    "archivesPath": "/stream-archives",
+    "archiveName": "event_archive"
+  }
+}

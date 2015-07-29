@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster
+from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, create_table
 from ssh_tools.ssh import forward_necessary_ports
 
 
@@ -81,6 +81,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     subparsers = parser.add_subparsers()
     upload_resources_parser = subparsers.add_parser(
         'upload-resources',
+        aliases=['ur'],
         help="Upload resources for a cluster."
     )
     upload_resources_parser.set_defaults(which="upload-resources")
@@ -94,6 +95,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
     launch_cluster_parser = subparsers.add_parser(
         'launch-cluster',
+        aliases=['l'],
         help="Launch a cluster."
     )
     launch_cluster_parser.set_defaults(which="launch-cluster")
@@ -107,6 +109,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
     forward_local_ports_parser = subparsers.add_parser(
         'forward-local-ports',
+        aliases=['f'],
         help="Forward the local ports for ssh access."
     )
     forward_local_ports_parser.set_defaults(which="forward-local-ports")
@@ -115,6 +118,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     forward_local_ports_parser.add_argument(*_profile_args, **_profile_kwargs)
     terminate_clusters_parser = subparsers.add_parser(
         'terminate-clusters',
+        aliases=['t'],
         help="Terminate the cluster(s) that are associated with the provided cluster ID(s)"
     )
     terminate_clusters_parser.set_defaults(which="terminate-clusters")
@@ -128,6 +132,22 @@ Python/Boto solution which compliments Amazon Kinesis with:
         required=True
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
+    create_table_parser = subparsers.add_parser(
+        'create-table',
+        aliases=['c'],
+        help="Send create table step to a cluster."
+    )
+    create_table_parser.set_defaults(which="create-table")
+    create_table_parser.add_argument(
+        '-s',
+        '--stream-file',
+        action="store",
+        help="Specify the configuration json for the stream",
+        required=True,
+        type=argparse.FileType('r')
+    )
+    create_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
+    create_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
 
     return parser
 
@@ -166,6 +186,14 @@ if __name__ == "__main__":
                 args.cluster_ids,
                 args.profile
             )
+        elif args.which == "create-table":
+            create_table(
+                args.cluster_id,
+                config['AWS']['S3'],
+                load_configuration(args.stream_file),
+                config['AWS']['profile']
+            )
+
     else:
         get_argument_parser().print_help()
         exit(2)

@@ -1,0 +1,9 @@
+{
+  "tableName": "MixedEvent",
+  "streamName": "MixedEventStream",
+  "s3n":{
+    "archivalDfsUrl": "s3n://AccessKey:SecretKey@stream-archival",
+    "archivesPath": "/special-archives",
+    "archiveName": "mixed_event"
+  }
+}

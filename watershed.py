@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, create_tables, configure_storage_stream_archives
+from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_stream_tables, configure_stream_archives
 from ssh_tools.ssh import forward_necessary_ports
 
 
@@ -142,25 +142,25 @@ Python/Boto solution which compliments Amazon Kinesis with:
         required=True
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
-    create_table_parser = subparsers.add_parser(
-        'create-tables',
+    configure_stream_table_parser = subparsers.add_parser(
+        'configure-stream-tables',
         aliases=['ct'],
-        help="Send create table steps to a cluster"
+        help="Push configuration for querying streams directly"
     )
-    create_table_parser.set_defaults(which="create-table")
-    create_table_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
-    create_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
-    create_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    configure_stream_table_parser.set_defaults(which="configure-stream-tables")
+    configure_stream_table_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
+    configure_stream_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
+    configure_stream_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
 
-    configure_storage_stream_archives_parser = subparsers.add_parser(
-        'configure-storage-stream-archives',
-        aliases=['cs'],
-        help="Send drill configuration step to cluster"
+    configure_stream_archives_parser = subparsers.add_parser(
+        'configure-stream-archives',
+        aliases=['ca'],
+        help="Push configuration for querying stream archives"
     )
-    configure_storage_stream_archives_parser.set_defaults(which="configure-storage-stream-archives")
-    configure_storage_stream_archives_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
-    configure_storage_stream_archives_parser.add_argument(*_config_file_args, **_config_file_kwargs)
-    configure_storage_stream_archives_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    configure_stream_archives_parser.set_defaults(which="configure-stream-archives")
+    configure_stream_archives_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
+    configure_stream_archives_parser.add_argument(*_config_file_args, **_config_file_kwargs)
+    configure_stream_archives_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
     return parser
 
 
@@ -198,15 +198,15 @@ if __name__ == "__main__":
                 args.cluster_ids,
                 args.profile
             )
-        elif args.which == "create-table":
-            create_tables(
+        elif args.which == "configure-stream-table":
+            configure_stream_tables(
                 args.cluster_id,
                 config['AWS']['S3'],
                 args.stream_folder,
                 config['AWS']['profile']
             )
-        elif args.which == "configure-storage-stream-archives":
-            configure_storage_stream_archives(
+        elif args.which == "configure-stream-archives":
+            configure_stream_archives(
                 args.cluster_id,
                 config['AWS']['S3'],
                 args.stream_folder,

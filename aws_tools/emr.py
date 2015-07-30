@@ -96,7 +96,6 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
         }
     ]
     steps = [
-
         {
             'Name': 'Install Hive',
             'HadoopJarStep': {
@@ -111,7 +110,6 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 ]
             },
             'ActionOnFailure': 'TERMINATE_CLUSTER'
-
         }
     ]
 
@@ -157,7 +155,7 @@ def terminate_emr_cluster(cluster_ids=None, profile='default'):
         raise ValueError(aws_except)
 
 
-def create_tables(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
+def configure_stream_tables(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
     s3_url = "s3://" + s3_config['resourcesBucket'] + "/" + s3_config['resourcesPrefix']
@@ -203,7 +201,7 @@ def create_tables(cluster_id, s3_config=None, stream_config_folder=None, profile
         raise ValueError(aws_except)
 
 
-def configure_storage_stream_archives(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
+def configure_stream_archives(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
     buckets = {}
     stream_configs = []
     for folder in os.walk(stream_config_folder):
@@ -215,8 +213,9 @@ def configure_storage_stream_archives(cluster_id, s3_config=None, stream_config_
                 with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
                     stream_configs.append(json.load(stream_config_fp))
     for stream in stream_configs:
-        bucket_name = stream['s3n']['archivesDfsUrl']
-        archive_path = stream['s3n']['archivesPath']
+        bucket_name = stream['archive']['dfsUrl']
+        archive_path = stream['archive']['path']
+        archive_name = stream['archive']['name']
         if bucket_name not in buckets:
             buckets[bucket_name] = []
         if archive_path not in buckets[bucket_name]:
@@ -236,7 +235,7 @@ def configure_storage_stream_archives(cluster_id, s3_config=None, stream_config_
         }
 
         for archive_path in buckets[bucket]:
-            conf_file["config"]["workspaces"][archive_path] = {
+            conf_file["config"]["workspaces"][archive_name] = {
                 "location": archive_path,
                 "writable": False
             }

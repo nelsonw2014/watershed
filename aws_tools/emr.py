@@ -50,6 +50,16 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
             }
         },
         {
+            'Name': 'configure-hadoop',
+            'ScriptBootstrapAction': {
+                'Path': 's3://elasticmapreduce/bootstrap-actions/configure-hadoop',
+                'Args': [
+                    "--hdfs-key-value",
+                    "dfs.replication=3"
+                ]
+            }
+        },
+        {
             'Name': 'setup_drill',
             'ScriptBootstrapAction': {
                 'Path': s3_url+'/emr/exec/setup_drill',
@@ -60,6 +70,13 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
             'Name': 'setup_drill_lib_aws',
             'ScriptBootstrapAction': {
                 'Path': s3_url+'/emr/exec/setup_drill_lib_aws',
+                'Args': []
+            }
+        },
+        {
+            'Name': 'configure_drill_storage_dfs',
+            'ScriptBootstrapAction': {
+                'Path': s3_url+'/emr/exec/configure_drill_storage_dfs',
                 'Args': []
             }
         },

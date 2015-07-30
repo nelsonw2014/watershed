@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit
  * @author pmogren
  */
 class LaunchAndQueryClusterSpec extends Specification {
+    String python = System.getProperty("pythonInterpreter", "python3")
     Logger logger = LoggerFactory.getLogger("LaunchAndQueryClusterSpec")
     String clusterId
 
@@ -34,7 +35,8 @@ class LaunchAndQueryClusterSpec extends Specification {
 
         when: "Uploading resources"
         Integer exitCode = new Shell().execute(System.out, 1, TimeUnit.MINUTES,
-            "python3", "${launcherHome}/watershed.py", "upload-resources", "-c", "${launcherConfig}", '-f')
+                "${python}", "${launcherHome}/watershed.py", "upload-resources", "-c", "${launcherConfig}", '-f')
+
 
         then: "Resources uploaded"
         exitCode == 0
@@ -42,7 +44,7 @@ class LaunchAndQueryClusterSpec extends Specification {
         when: "Launching a cluster"
         def capturedOutputStream = new ByteArrayOutputStream()
         exitCode = new Shell().execute(new PrintStream(capturedOutputStream), 1, TimeUnit.MINUTES,
-                "python3", "${launcherHome}/watershed.py", "launch-cluster", "-c", "${launcherConfig}", "-w")
+                "${python}", "${launcherHome}/watershed.py", "launch-cluster", "-c", "${launcherConfig}", "-w")
         String capturedOutput = capturedOutputStream.toString()
         System.out.print(capturedOutput)
         if (capturedOutput.contains('j-')) {
@@ -55,7 +57,7 @@ class LaunchAndQueryClusterSpec extends Specification {
 
         when: "Forward local ports to cluster with SSH"
         Process forwardingProcess = new Shell().executeInBackground(System.out,
-                "python3", "${launcherHome}/watershed.py", "forward-local-ports", "-i", "${clusterId}",
+                "${python}", "${launcherHome}/watershed.py", "forward-local-ports", "-i", "${clusterId}",
                 "-k", "${privateKeyFile}")
 
         then:
@@ -106,7 +108,7 @@ class LaunchAndQueryClusterSpec extends Specification {
         if (clusterId) {
             logger.info("Terminating cluster ${clusterId}.")
             new Shell().execute(System.out, 1, TimeUnit.MINUTES,
-                    "python3", "${launcherHome}/watershed.py", "terminate-clusters", "-i", "${clusterId}")
+                    "${python}", "${launcherHome}/watershed.py", "terminate-clusters", "-i", "${clusterId}")
         }
         if (socket?.connected) {
             socket.close()

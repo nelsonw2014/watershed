@@ -1,16 +1,16 @@
 {
   "AWS": {
     "S3": {
-      "resourcesBucket": "emr-resources",
-      "resourcesPrefix": "resources",
       "accessKey": "accessKey",
-      "secretKey": "secretKey"
+      "secretKey": "secretKey",
+      "resourcesBucket": "watershed",
+      "resourcesPrefix": "resources"
     },
     "EMR": {
-      "clusterName": "stream-archival",
+      "clusterName": "watershed",
       "roles": {
-        "service": "EMR-Role-Name",
-        "ec2": "EMR-EC2-Resource-Role-Name"
+        "service": "EMR_DefaultRole",
+        "ec2": "EMR_EC2_DefaultRole"
       },
       "ec2KeyName": null,
       "ec2SubnetId": null,
@@ -33,10 +33,10 @@
           "InstanceType": "m3.xlarge"
         }
       ],
-      "tags":[
+      "tags": [
         {
           "Key": "Name",
-          "Value": "stream-archival"
+          "Value": "watershed"
         }
       ]
     },

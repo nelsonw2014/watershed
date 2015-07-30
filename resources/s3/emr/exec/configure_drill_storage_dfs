@@ -1,0 +1,66 @@
+#!/bin/sh
+
+# Copyright (C) 2015 Commerce Technologies, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+#Note: Drill likes to have one or more folders beneath each workspace
+#location to use as table names, unless specific files will be named.
+
+IS_MASTER=true
+if [ -f /mnt/var/lib/info/instance.json ]; then
+  IS_MASTER=`cat /mnt/var/lib/info/instance.json | tr -d '\n ' | sed -n 's|.*\"isMaster\":\([^,]*\).*|\1|p'`
+fi
+[ "$IS_MASTER" = "false" ] && exit 0
+
+hdfs dfs -mkdir -p /tmp/drill
+hdfs dfs -mkdir -p /user/drill
+
+NAME_NODE_ADDR=${HOSTNAME}
+
+cat << EOF > drill-storage-dfs.conf
+{
+  "name": "dfs",
+  "config" : {
+    "type" : "file",
+    "enabled" : true,
+    "connection" : "hdfs://${NAME_NODE_ADDR}:9000",
+    "workspaces" : {
+      "root" : {
+        "location" : "/",
+        "writable" : false,
+        "defaultInputFormat" : null
+      },
+      "tmp" : {
+        "location" : "/tmp/drill",
+        "writable" : true,
+        "defaultInputFormat" : null
+      },
+      "data" : {
+        "location" : "/user/drill",
+        "writable" : true,
+        "defaultInputFormat" : null
+      }
+    }
+  }
+}
+EOF
+
+wget --retry-connrefused --no-verbose --header="Content-Type: application/json" \
+ --post-file=./drill-storage-dfs.conf \
+ http://localhost:8047/storage/dfs.json
+EXIT_CODE=$?
+
+rm -f drill-storage-dfs.conf
+exit ${EXIT_CODE}

@@ -41,8 +41,8 @@ JETS3T_URL=http://bitbucket.org/jmurty/jets3t/downloads/${JETS3T_PKGNAME}.zip
 pushd /tmp
 rm -rf ${JETS3T_PKGNAME}.zip ${JETS3T_PKGNAME}
 echo Downloading Jets3t from ${JETS3T_URL}
-wget ${JETS3T_URL}
-unzip ${JETS3T_PKGNAME}.zip
+wget -nv ${JETS3T_URL}
+unzip -q ${JETS3T_PKGNAME}.zip
 cp -fv ${JETS3T_PKGNAME}/jars/${JETS3T_PKGNAME}.jar /home/hadoop/drill/jars/3rdparty
 pushd /home/hadoop/drill/bin
 cp -af hadoop-excludes.txt hadoop-excludes.txt.old

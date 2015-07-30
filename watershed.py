@@ -187,7 +187,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
         const=True,
         help="Terminate once ports are closed"
     )
-return parser
+    return parser
 
 
 def load_configuration(configuration_file):

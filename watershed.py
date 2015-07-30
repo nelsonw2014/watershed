@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, create_tables, configure_storage_stream_archives
+from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, create_tables, configure_storage_stream_archives, wait_for_cluster
 from ssh_tools.ssh import forward_necessary_ports
 
 
@@ -163,6 +163,14 @@ Python/Boto solution which compliments Amazon Kinesis with:
     configure_storage_stream_archives_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     configure_storage_stream_archives_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_storage_stream_archives_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    wait_for_cluster_parser = subparsers.add_parser(
+        'wait-for-cluster',
+        aliases=['w'],
+        help="Wait for the cluster to start"
+    )
+    wait_for_cluster_parser.set_defaults(which="wait-for-cluster")
+    wait_for_cluster_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    wait_for_cluster_parser.add_argument(*_profile_args, **_profile_kwargs)
     do_everything_parser = subparsers.add_parser(
         'everything',
         aliases=['e'],
@@ -230,7 +238,13 @@ if __name__ == "__main__":
                 args.stream_folder,
                 config['AWS']['profile']
             )
-
+        elif args.which == "wait-for-cluster":
+            print("Cluster can take more than 5 minutes to start...")
+            wait_for_cluster(
+                args.cluster_id,
+                args.profile
+            )
+            print("Cluster ready.")
         elif args.which == "everything":
             upload_resources(
                 config['AWS']['S3'],

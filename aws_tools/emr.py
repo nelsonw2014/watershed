@@ -135,6 +135,7 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
             AmiVersion=emr_config['amiVersion'],
             Instances=instances,
             VisibleToAllUsers=True,
+            LogUri=s3_url+"/emr/logs",
             Steps=steps,
             BootstrapActions=bootstrap_actions,
             ServiceRole=emr_config['roles']['service'],

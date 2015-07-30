@@ -48,7 +48,8 @@ def upload_stream_archive_configuration(s3_config=None, configs=None, profile="d
         for config in configs:
             s3_file_path = s3_config['resourcesPrefix']+'/configs/'+config['name']+'.json'
             byte_output = str.encode(json.dumps(config))
-            s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=byte_output)
+            s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(
+                Body=byte_output, ServerSideEncryption='AES256')
             paths.append(s3_file_path)
             file_upload_count += 1
         print("Upload Successful, {0} files uploaded.".format(file_upload_count))

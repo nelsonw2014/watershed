@@ -71,53 +71,13 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
             }
         },
         {
-            'Name': 'Install Pip',
+            'Name': 'setup_python',
             'ScriptBootstrapAction': {
-                'Path': 'file:/usr/bin/sudo',
-                'Args': [
-                    'yum',
-                    'install',
-                    '-y',
-                    'python-pip'
-                ]
-            }
-        },
-        {
-            'Name': 'Update Pip',
-            'ScriptBootstrapAction': {
-                'Path': 'file:/usr/bin/sudo',
-                'Args': [
-                    'pip',
-                    'install',
-                    '--upgrade',
-                    'pip'
-                ]
-            }
-        },
-        {
-            'Name': 'Fix Pip /usr/bin entry',
-            'ScriptBootstrapAction': {
-                'Path': 'file:/usr/bin/sudo',
-                'Args': [
-                    'cp',
-                    '/usr/local/bin/pip2.6',
-                    '/usr/bin/pip-2.6'
-                ]
-            }
-        },
-        {
-            'Name': 'Install simples3',
-            'ScriptBootstrapAction': {
-                'Path': 'file:/usr/bin/sudo',
-                'Args': [
-                    'pip-2.6',
-                    'install',
-                    'simples3'
-                ]
+                'Path': s3_url+'/emr/exec/setup_python',
+                'Args': []
             }
         }
     ]
-
     steps = [
 
         {

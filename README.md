@@ -68,6 +68,7 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
 * For additional information, use the **-h** argument without any arguments or with any subcommand:
  * upload-resources (u)
  * launch-cluster (l)
+ * wait-for-cluster (w)
  * forward-local-ports (f)
  * create-tables (ct)
  * configure-storage-stream-archives (cs)

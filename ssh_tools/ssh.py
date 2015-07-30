@@ -58,4 +58,3 @@ def forward_necessary_ports(cluster_id=None, private_key_path=None, profile='def
     except KeyboardInterrupt:
         for forwarder in port_forwarders:
             forwarder.stop()
-        exit()

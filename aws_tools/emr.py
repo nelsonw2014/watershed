@@ -31,6 +31,13 @@ def get_master_address(cluster_id, profile='default'):
         raise ValueError(aws_except)
 
 
+def wait_for_cluter(cluster_id, profile="default"):
+    emr_client = boto3.session.Session(profile_name=profile).client('emr')
+
+    cluster_start_waiter = emr_client.get_waiter('cluster_running')
+    cluster_start_waiter.wait(ClusterId=cluster_id)
+
+
 def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_until_ready=False):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
@@ -137,10 +144,9 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
         if wait_until_ready:
             print("Waiting option selected. Cluster can take more than 5 minutes to start...")
             cluster_id = return_json['JobFlowId']
-            cluster_start_waiter = emr_client.get_waiter('cluster_running')
-            cluster_start_waiter.wait(ClusterId=cluster_id)
+            wait_for_cluter(cluster_id, profile)
             print("Cluster '{0}' ready.".format(cluster_id))
-
+        return return_json['JobFlowId']
     except Exception as aws_except:
         raise ValueError(aws_except)
 
@@ -199,6 +205,7 @@ def create_tables(cluster_id, s3_config=None, stream_config_folder=None, profile
             Steps=steps_to_add
         )
         print(return_json)
+        print("{0} tables created.".format(len(steps_to_add)))
     except Exception as aws_except:
         raise ValueError(aws_except)
 

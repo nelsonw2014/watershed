@@ -81,6 +81,15 @@ Python/Boto solution which compliments Amazon Kinesis with:
         required=True,
         type=str
     )
+    _wait_until_ready_args = [
+        '-w',
+        '--wait-until-ready'
+    ]
+    _wait_until_ready_kwargs = dict(
+        action="store_const",
+        const=True,
+        help="Wait until cluster launches (takes five minutes or more)"
+    )
 
     parser = argparse.ArgumentParser(
         prog=os.path.basename(__file__),
@@ -110,13 +119,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
     launch_cluster_parser.set_defaults(which="launch-cluster")
     launch_cluster_parser.add_argument(*_config_file_args, **_config_file_kwargs)
-    launch_cluster_parser.add_argument(
-        '-w',
-        '--wait-until-ready',
-        action="store_const",
-        const=True,
-        help="Wait until cluster launches (takes five minutes or more)"
-    )
+    launch_cluster_parser.add_argument(*_wait_until_ready_args, **_wait_until_ready_kwargs)
     forward_local_ports_parser = subparsers.add_parser(
         'forward-local-ports',
         aliases=['f'],
@@ -147,11 +150,10 @@ Python/Boto solution which compliments Amazon Kinesis with:
         aliases=['ct'],
         help="Send create table steps to a cluster"
     )
-    create_table_parser.set_defaults(which="create-table")
+    create_table_parser.set_defaults(which="create-tables")
     create_table_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     create_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     create_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
-
     configure_storage_stream_archives_parser = subparsers.add_parser(
         'configure-storage-stream-archives',
         aliases=['cs'],
@@ -161,6 +163,22 @@ Python/Boto solution which compliments Amazon Kinesis with:
     configure_storage_stream_archives_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     configure_storage_stream_archives_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_storage_stream_archives_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    do_everything_parser = subparsers.add_parser(
+        'everything',
+        aliases=['e'],
+        help="Start a cluster and forward ports using configuration files"
+    )
+    do_everything_parser.set_defaults(which='everything')
+    do_everything_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
+    do_everything_parser.add_argument(*_config_file_args, **_config_file_kwargs)
+    do_everything_parser.add_argument(*_private_key_args, **_private_key_kwargs)
+    do_everything_parser.add_argument(
+        '-t',
+        '--terminate-at-end',
+        action="store_const",
+        const=True,
+        help="Terminate once ports are closed"
+    )
     return parser
 
 
@@ -169,6 +187,7 @@ def load_configuration(configuration_file):
 
 if __name__ == "__main__":
     args = get_argument_parser().parse_args()
+    print(args)
     config = dict()
     if hasattr(args, 'which'):
         if hasattr(args, 'config_file'):
@@ -198,7 +217,7 @@ if __name__ == "__main__":
                 args.cluster_ids,
                 args.profile
             )
-        elif args.which == "create-table":
+        elif args.which == "create-tables":
             create_tables(
                 args.cluster_id,
                 config['AWS']['S3'],
@@ -212,6 +231,41 @@ if __name__ == "__main__":
                 args.stream_folder,
                 config['AWS']['profile']
             )
+
+        elif args.which == "everything":
+            upload_resources(
+                config['AWS']['S3'],
+                config['AWS']['profile'],
+                True
+            )
+            cluster_id = launch_emr_cluster(
+                config['AWS']['S3'],
+                config['AWS']['EMR'],
+                config['AWS']['profile'],
+                True
+            )
+            create_tables(
+                cluster_id,
+                config['AWS']['S3'],
+                args.stream_folder,
+                config['AWS']['profile']
+            )
+            configure_storage_stream_archives(
+                cluster_id,
+                config['AWS']['S3'],
+                args.stream_folder,
+                config['AWS']['profile']
+            )
+            forward_necessary_ports(
+                cluster_id,
+                args.private_key,
+                config['AWS']['profile']
+            )
+            if args.terminate_at_end is not None:
+                terminate_emr_cluster(
+                    [cluster_id],
+                    config['AWS']['profile']
+                )
 
     else:
         get_argument_parser().print_help()

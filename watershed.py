@@ -187,7 +187,6 @@ def load_configuration(configuration_file):
 
 if __name__ == "__main__":
     args = get_argument_parser().parse_args()
-    print(args)
     config = dict()
     if hasattr(args, 'which'):
         if hasattr(args, 'config_file'):

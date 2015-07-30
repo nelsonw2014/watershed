@@ -2,7 +2,7 @@
   "tableName": "app_event",
   "streamName": "app_event_stream",
   "s3n":{
-    "archivalDfsUrl": "s3n://AccessKey:SecretKey@watershed",
+    "archivesDfsUrl": "s3n://AccessKey:SecretKey@watershed",
     "archivesPath": "/stream-archives",
     "archiveName": "app_event"
   }

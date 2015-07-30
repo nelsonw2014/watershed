@@ -215,7 +215,7 @@ def configure_storage_stream_archives(cluster_id, s3_config=None, stream_config_
                 with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
                     stream_configs.append(json.load(stream_config_fp))
     for stream in stream_configs:
-        bucket_name = stream['s3n']['archivalDfsUrl']
+        bucket_name = stream['s3n']['archivesDfsUrl']
         archive_path = stream['s3n']['archivesPath']
         if bucket_name not in buckets:
             buckets[bucket_name] = []

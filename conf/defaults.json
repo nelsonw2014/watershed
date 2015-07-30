@@ -1,22 +1,22 @@
 {
   "AWS": {
     "S3": {
-      "resourcesBucket": "emr-resources",
+      "resourcesBucket": "watershed",
       "resourcesPrefix": "resources"
     },
     "EMR": {
-      "clusterName": "stream-archival",
+      "clusterName": "watershed",
       "roles": {
-        "service": "EMR-Role-Name",
-        "ec2": "EMR-EC2-Resource-Role-Name"
+        "service": "EMR_DefaultRole",
+        "ec2": "EMR_EC2_DefaultRole"
       },
       "ec2KeyName": null,
       "ec2SubnetId": null,
       "additionalMasterSecurityGroups": [],
       "amiVersion": "3.8.0",
-      "archivalDfsUrl": "s3n://AccessKey:SecretKey@stream-archival",
+      "archivalDfsUrl": "s3n://AccessKey:SecretKey@watershed",
       "archivesPath": "/stream-archives",
-      "archiveName": "event_archive",
+      "archiveName": "app_event",
       "instanceGroups": [
         {
           "InstanceRole": "MASTER",
@@ -34,16 +34,16 @@
           "InstanceType": "m3.xlarge"
         }
       ],
-      "hive":{
-        "tableName": "AppEvent"
+      "hive": {
+        "tableName": "app_event_stream"
       },
       "kinesis": {
-        "streamName": "AppEventStream"
+        "streamName": "app_event"
       },
-      "tags":[
+      "tags": [
         {
           "Key": "Name",
-          "Value": "stream-archival"
+          "Value": "watershed"
         }
       ]
     },

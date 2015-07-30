@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 #Note: Drill likes to have one or more folders beneath each workspace
 #location to use as table names, unless specific files will be named.
 
@@ -23,38 +24,43 @@ if [ -f /mnt/var/lib/info/instance.json ]; then
 fi
 [ "$IS_MASTER" = "false" ] && exit 0
 
+hdfs dfs -mkdir -p /tmp/drill
+hdfs dfs -mkdir -p /user/drill
 
-ARCHIVES_DFS_URL="$1"
-ARCHIVES_PATH="$2"
+NAME_NODE_ADDR=${HOSTNAME}
 
-if [ -z "${ARCHIVES_DFS_URL}" ]; then
-  echo "Usage: $0 <ARCHIVES_DFS_URL> [ARCHIVES_PATH]"
-  exit 1
-fi
-
-cat << EOF > drill-storage-stream_archives.conf
+cat << EOF > drill-storage-dfs.conf
 {
-  "name": "stream_archives",
-  "config": {
-      "type": "file",
-      "enabled": true,
-      "connection": "${ARCHIVES_DFS_URL}",
-      "workspaces": {
-        "default": {
-          "location": "${ARCHIVES_PATH:-/}",
-          "writable": false
-        }
+  "name": "dfs",
+  "config" : {
+    "type" : "file",
+    "enabled" : true,
+    "connection" : "hdfs://${NAME_NODE_ADDR}:9000",
+    "workspaces" : {
+      "root" : {
+        "location" : "/",
+        "writable" : false,
+        "defaultInputFormat" : null
       },
-      "formats": null
+      "tmp" : {
+        "location" : "/tmp/drill",
+        "writable" : true,
+        "defaultInputFormat" : null
+      },
+      "data" : {
+        "location" : "/user/drill",
+        "writable" : true,
+        "defaultInputFormat" : null
+      }
     }
   }
 }
 EOF
 
 wget --retry-connrefused --no-verbose --header="Content-Type: application/json" \
- --post-file=./drill-storage-stream_archives.conf \
- http://localhost:8047/storage/stream_archives.json
+ --post-file=./drill-storage-dfs.conf \
+ http://localhost:8047/storage/dfs.json
 EXIT_CODE=$?
 
-rm -f drill-storage-stream_archives.conf
+rm -f drill-storage-dfs.conf
 exit ${EXIT_CODE}

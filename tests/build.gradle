@@ -48,11 +48,8 @@ tasks.withType(Test) {
         systemProperty "privateKeyFile", new File("${privateKeyFile}").canonicalPath
     }
 
-    // The 'aws' command needs to be on the PATH for tests.
-    // Note that on OSX in particular, when running in a GUI like an IDE, the environment may not include everything
-    // found in the environment of a command-line shell.
-    if (project.hasProperty("awsBinPath")) {
-        println "Appending ${File.pathSeparator}${awsBinPath} to PATH"
-        environment "PATH", "${System.getenv('PATH')}${File.pathSeparator}${awsBinPath}"
+    // A Python3 interpreter needs to be on the PATH and named 'python3', or else specified with a property.
+    if (project.hasProperty("pythonInterpreter")) {
+        systemProperty "pythonInterpreter", new File("${pythonInterpreter}").canonicalPath
     }
 }

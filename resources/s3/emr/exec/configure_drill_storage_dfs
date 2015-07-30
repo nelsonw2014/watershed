@@ -20,37 +20,35 @@
 
 IS_MASTER=true
 if [ -f /mnt/var/lib/info/instance.json ]; then
-  IS_MASTER=`cat /mnt/var/lib/info/instance.json | tr -d '\n ' | sed -n 's|.*\"isMaster\":\([^,]*\).*|\1|p'`
+  IS_MASTER=`jq .isMaster /mnt/var/lib/info/instance.json`
 fi
 [ "$IS_MASTER" = "false" ] && exit 0
 
-hdfs dfs -mkdir -p /tmp/drill
-hdfs dfs -mkdir -p /user/drill
 
 NAME_NODE_ADDR=${HOSTNAME}
 
 cat << EOF > drill-storage-dfs.conf
 {
   "name": "dfs",
-  "config" : {
-    "type" : "file",
-    "enabled" : true,
-    "connection" : "hdfs://${NAME_NODE_ADDR}:9000",
-    "workspaces" : {
-      "root" : {
-        "location" : "/",
-        "writable" : false,
-        "defaultInputFormat" : null
+  "config": {
+    "type": "file",
+    "enabled": true,
+    "connection": "hdfs://${NAME_NODE_ADDR}:9000",
+    "workspaces": {
+      "root": {
+        "location": "/",
+        "writable": false,
+        "defaultInputFormat": null
       },
-      "tmp" : {
-        "location" : "/tmp/drill",
-        "writable" : true,
-        "defaultInputFormat" : null
+      "data": {
+        "location": "/user/drill",
+        "writable": true,
+        "defaultInputFormat": null
       },
-      "data" : {
-        "location" : "/user/drill",
-        "writable" : true,
-        "defaultInputFormat" : null
+      "logs": {
+        "location": "/var/log/drill",
+        "writable": false,
+        "defaultInputFormat": null
       }
     }
   }

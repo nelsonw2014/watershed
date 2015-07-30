@@ -57,6 +57,13 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
             }
         },
         {
+            'Name': 'early_hdfs',
+            'ScriptBootstrapAction': {
+                'Path': s3_url+'/emr/exec/early_hdfs',
+                'Args': []
+            }
+        },
+        {
             'Name': 'setup_drill',
             'ScriptBootstrapAction': {
                 'Path': s3_url+'/emr/exec/setup_drill',
@@ -93,7 +100,14 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                     emr_config['archivesPath']
                 ]
             }
-        }
+        },
+        {
+            'Name': 'stop_early_hdfs',
+            'ScriptBootstrapAction': {
+                'Path': s3_url+'/emr/exec/stop_early_hdfs',
+                'Args': []
+            }
+        },
     ]
 
     steps = [

@@ -20,16 +20,19 @@
       "instanceGroups": [
         {
           "InstanceRole": "MASTER",
+          "Name": "MASTER",
           "InstanceCount": 1,
           "InstanceType": "m3.xlarge"
         },
         {
           "InstanceRole": "CORE",
-          "InstanceCount": 1,
+          "Name": "CORE",
+          "InstanceCount": 2,
           "InstanceType": "m3.xlarge"
         },
         {
           "InstanceRole": "TASK",
+          "Name": "TASK",
           "InstanceCount": 1,
           "InstanceType": "m3.xlarge"
         }

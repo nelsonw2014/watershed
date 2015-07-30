@@ -14,37 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# This only connects to Hive; you must also configure Hive tables for streams.
-# (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/query-kinesis-generate-data.html)
-
 IS_MASTER=true
 if [ -f /mnt/var/lib/info/instance.json ]; then
   IS_MASTER=`jq .isMaster /mnt/var/lib/info/instance.json`
 fi
 [ "$IS_MASTER" = "false" ] && exit 0
 
+echo "Starting HDFS early..."
+sudo service hadoop-hdfs-namenode start
+sudo service hadoop-hdfs-datanode start
 
-HIVE_METASTORE_ADDR=${HOSTNAME}
+echo "Waiting for port 9000 to be listening..."
+for i in {1..30}; do
+  sleep 1s;
+  echo "Attempt #$i";
+  nc -z ${HOSTNAME} 9000 && break;
+done
 
-cat << EOF > drill-storage-streams.conf
-{
-  "name": "streams",
-  "config": {
-      "type": "hive",
-      "configProps": {
-         "hive.metastore.uris": "thrift://${HIVE_METASTORE_ADDR}:9083",
-         "hive.metastore.sasl.enabled": "false"
-      }
-    }
-  }
-}
-EOF
-
-wget --retry-connrefused --no-verbose --header="Content-Type: application/json" \
- --post-file=./drill-storage-streams.conf \
- http://localhost:8047/storage/streams.json
-EXIT_CODE=$?
-
-rm -f drill-storage-streams.conf
-exit ${EXIT_CODE}
+echo "Creating directories in HDFS..."
+# Storage plugin writable workspace for user data like views and CTAS
+hdfs dfs -mkdir -p /user/drill
+# For query profiles and maybe other logs written by Drill, exposed as a readonly storage plugin workspace
+hdfs dfs -mkdir -p /var/log/drill
+# For Drill's internal spilling/spooling, not exposed in a storage plugin
+hdfs dfs -mkdir -p /tmp/drill

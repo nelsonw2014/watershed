@@ -14,37 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# This only connects to Hive; you must also configure Hive tables for streams.
-# (http://docs.aws.amazon.com/ElasticMapReduce/latest/DeveloperGuide/query-kinesis-generate-data.html)
-
 IS_MASTER=true
 if [ -f /mnt/var/lib/info/instance.json ]; then
   IS_MASTER=`jq .isMaster /mnt/var/lib/info/instance.json`
 fi
 [ "$IS_MASTER" = "false" ] && exit 0
 
+echo "Stopping early HDFS in case it has been reconfigured..."
+sudo service hadoop-hdfs-namenode stop
+sudo service hadoop-hdfs-datanode stop
 
-HIVE_METASTORE_ADDR=${HOSTNAME}
-
-cat << EOF > drill-storage-streams.conf
-{
-  "name": "streams",
-  "config": {
-      "type": "hive",
-      "configProps": {
-         "hive.metastore.uris": "thrift://${HIVE_METASTORE_ADDR}:9083",
-         "hive.metastore.sasl.enabled": "false"
-      }
-    }
-  }
-}
-EOF
-
-wget --retry-connrefused --no-verbose --header="Content-Type: application/json" \
- --post-file=./drill-storage-streams.conf \
- http://localhost:8047/storage/streams.json
-EXIT_CODE=$?
-
-rm -f drill-storage-streams.conf
-exit ${EXIT_CODE}
+# Let service-nanny start it back up.

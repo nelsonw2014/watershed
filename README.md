@@ -62,14 +62,14 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
 # Getting Started
 * Create a config file. 
  * Make a copy of **conf/defaults.json** and edit the copy
-* Run **python3 watershed.py upload-resources -c &lt;config-file&gt;**
-* Run **python3 watershed.py launch-cluster -c &lt;config-file&gt;** and note the cluster-id that is
-printed to stdout; future commands will require it.
- * **-w** will wait until cluster is ready before exiting
-* Run **python3 watershed.py forward-local-ports -i &lt;cluster-id&gt; -k &lt;private-key-file&gt;**
+* Run **python3 watershed.py e -c &lt;config-file&gt; -k &lt;private-key-file&gt; -s &lt;stream-config-folder&gt;**
  * Ctrl-C will stop the forwarding at any time.
- * **-p &lt;profile&gt;** will use a non-default profile to connect to aws
-* Run **python3 watershed.py terminate-clusters -i &lt;cluster-id&gt; &#91;&lt;cluster-id&gt; ...&#93;** when done to avoid recurring charges.
- * **-p &lt;profile&gt;** will use a non-default profile to connect to aws
-* For additional cluster management operations, explore the **emr** sub-command of the AWS CLI, or log on to the AWS web
-console and browse to the EMR service page.
+ * **-t** will terminate the cluster on closing of port forwarding
+* For additional information, use the **-h** argument without any arguments or with any subcommand:
+ * upload-resources (u)
+ * launch-cluster (l)
+ * forward-local-ports (f)
+ * create-tables (ct)
+ * configure-storage-stream-archives (cs)
+ * terminate-cluster (t)
+ * everything (e)

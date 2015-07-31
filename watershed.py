@@ -176,7 +176,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
         'all',
         help="Start a cluster and forward ports using configuration files"
     )
-    do_everything_parser.set_defaults(which='everything')
+    do_everything_parser.set_defaults(which='all')
     do_everything_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     do_everything_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     do_everything_parser.add_argument(*_private_key_args, **_private_key_kwargs)
@@ -245,7 +245,7 @@ if __name__ == "__main__":
                 args.profile
             )
             print("Cluster ready.")
-        elif args.which == "everything":
+        elif args.which == "all":
             upload_resources(
                 config['AWS']['S3'],
                 config['AWS']['profile'],

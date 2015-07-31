@@ -90,6 +90,15 @@ Python/Boto solution which compliments Amazon Kinesis with:
         const=True,
         help="Wait until cluster launches (takes five minutes or more)"
     )
+    _logging_args = [
+        '-l',
+        '--logging'
+    ]
+    _logging_kwargs = dict(
+        action="store_const",
+        const=True,
+        help="Enable logging. Logs will be outputted to the resources folder in S3"
+    )
 
     parser = argparse.ArgumentParser(
         prog=os.path.basename(__file__),
@@ -120,6 +129,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     launch_cluster_parser.set_defaults(which="launch-cluster")
     launch_cluster_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     launch_cluster_parser.add_argument(*_wait_until_ready_args, **_wait_until_ready_kwargs)
+    launch_cluster_parser.add_argument(*_logging_args, **_logging_kwargs)
     forward_local_ports_parser = subparsers.add_parser(
         'forward-local-ports',
         aliases=['f'],
@@ -147,7 +157,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
     configure_stream_table_parser = subparsers.add_parser(
         'configure-stream-tables',
-        aliases=['ct'],
+        aliases=['cs'],
         help="Push configuration for querying streams directly"
     )
     configure_stream_table_parser.set_defaults(which="configure-stream-tables")
@@ -180,6 +190,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     do_everything_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     do_everything_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     do_everything_parser.add_argument(*_private_key_args, **_private_key_kwargs)
+    do_everything_parser.add_argument(*_logging_args, **_logging_kwargs)
     do_everything_parser.add_argument(
         '-t',
         '--terminate-at-end',
@@ -211,7 +222,8 @@ if __name__ == "__main__":
                 config['AWS']['S3'],
                 config['AWS']['EMR'],
                 config['AWS']['profile'],
-                args.wait_until_ready
+                args.wait_until_ready,
+                args.logging
             )
         elif args.which == "forward-local-ports":
             forward_necessary_ports(
@@ -224,7 +236,7 @@ if __name__ == "__main__":
                 args.cluster_ids,
                 args.profile
             )
-        elif args.which == "configure-stream-table":
+        elif args.which == "configure-stream-tables":
             configure_stream_tables(
                 args.cluster_id,
                 config['AWS']['S3'],
@@ -255,7 +267,8 @@ if __name__ == "__main__":
                 config['AWS']['S3'],
                 config['AWS']['EMR'],
                 config['AWS']['profile'],
-                True
+                True,
+                args.logging
             )
             configure_stream_tables(
                 cluster_id,
@@ -274,7 +287,7 @@ if __name__ == "__main__":
                 args.private_key,
                 config['AWS']['profile']
             )
-            if args.terminate_at_end is not None:
+            if args.terminate_at_end:
                 terminate_emr_cluster(
                     [cluster_id],
                     config['AWS']['profile']

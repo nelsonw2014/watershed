@@ -30,9 +30,9 @@ if __name__ == "__main__":
         sys.argv[3]
     )
 
-    storage_stream_archive_config_files = sys.argv[4:]
+    stream_archive_config_files = sys.argv[4:]
 
-    for config_file_path in storage_stream_archive_config_files:
+    for config_file_path in stream_archive_config_files:
 
         config_file = s.get(config_file_path)
         json_name = config_file_path.split('/')[len(config_file_path.split('/'))-1]

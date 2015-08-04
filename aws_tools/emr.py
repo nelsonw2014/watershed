@@ -38,7 +38,7 @@ def wait_for_cluster(cluster_id, profile="default"):
     cluster_start_waiter.wait(ClusterId=cluster_id)
 
 
-def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_until_ready=False):
+def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_until_ready=False, logging=False):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
     s3_url = "s3://"+s3_config['resourcesBucket']+"/"+s3_config['resourcesPrefix']
@@ -128,17 +128,29 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
         'AdditionalMasterSecurityGroups': emr_config['additionalMasterSecurityGroups'] if emr_config['additionalMasterSecurityGroups'] is not None else []
     }
     try:
-        return_json = emr_client.run_job_flow(
-            Name=emr_config['clusterName'],
-            AmiVersion=emr_config['amiVersion'],
-            Instances=instances,
-            VisibleToAllUsers=True,
-            LogUri=s3_url+"/emr/logs",
-            Steps=steps,
-            BootstrapActions=bootstrap_actions,
-            ServiceRole=emr_config['roles']['service'],
-            JobFlowRole=emr_config['roles']['ec2']
-        )
+        if logging:
+            return_json = emr_client.run_job_flow(
+                Name=emr_config['clusterName'],
+                AmiVersion=emr_config['amiVersion'],
+                Instances=instances,
+                VisibleToAllUsers=True,
+                LogUri=s3_url+"/emr/logs",
+                Steps=steps,
+                BootstrapActions=bootstrap_actions,
+                ServiceRole=emr_config['roles']['service'],
+                JobFlowRole=emr_config['roles']['ec2']
+            )
+        else:
+            return_json = emr_client.run_job_flow(
+                Name=emr_config['clusterName'],
+                AmiVersion=emr_config['amiVersion'],
+                Instances=instances,
+                VisibleToAllUsers=True,
+                Steps=steps,
+                BootstrapActions=bootstrap_actions,
+                ServiceRole=emr_config['roles']['service'],
+                JobFlowRole=emr_config['roles']['ec2']
+            )
         print(return_json)
         if wait_until_ready:
             print("Waiting option selected. Cluster can take more than 5 minutes to start...")
@@ -172,9 +184,10 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_config_folder=Non
         if folder[2]:
             # if there are files in the directory
             for file in folder[2]:
+                if ".json" in file:
+                    with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
+                        stream_configs.append(json.load(stream_config_fp))
 
-                with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
-                    stream_configs.append(json.load(stream_config_fp))
     steps_to_add = []
     for stream_config in stream_configs:
         steps_to_add.append({
@@ -209,41 +222,43 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_config_folder=Non
 
 
 def configure_stream_archives(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
-    buckets = {}
+    archives = {}
     stream_configs = []
     for folder in os.walk(stream_config_folder):
         # for all directories within the local_resources_directory
         if folder[2]:
             # if there are files in the directory
             for file in folder[2]:
+                if ".json" in file:
+                    with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
+                        stream_configs.append(json.load(stream_config_fp))
 
-                with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
-                    stream_configs.append(json.load(stream_config_fp))
     for stream in stream_configs:
-        bucket_name = stream['archive']['dfsUrl']
+        dfs_url = stream['archive']['dfsUrl']
         archive_path = stream['archive']['path']
         archive_name = stream['archive']['name']
-        if bucket_name not in buckets:
-            buckets[bucket_name] = []
-        if archive_path not in buckets[bucket_name]:
-            buckets[bucket_name].append(archive_path)
+        if dfs_url not in archives:
+            archives[dfs_url] = []
+        if archive_path not in archives[dfs_url]:
+            # TODO verify names are unique
+            archives[dfs_url].append({'archive_path': archive_path, 'archive_name': archive_name})
 
     conf_files = []
-    for bucket in buckets.keys():
+    for dfs_url in archives.keys():
         conf_file = {
-            "name": bucket.split('@')[1],
+            "name": dfs_url.split('@')[1],
             "config": {
                 "type": "file",
                 "enabled": "true",
-                "connection": bucket,
+                "connection": dfs_url,
                 "workspaces": {},
                 "formats": None
             }
         }
 
-        for archive_path in buckets[bucket]:
-            conf_file["config"]["workspaces"][archive_name] = {
-                "location": archive_path,
+        for archive_defn in archives[dfs_url]:
+            conf_file["config"]["workspaces"][archive_defn['archive_name']] = {
+                "location": archive_defn['archive_path'],
                 "writable": False
             }
         conf_files.append(conf_file)

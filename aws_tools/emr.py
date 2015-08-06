@@ -13,9 +13,25 @@
 # limitations under the License.
 
 import boto3
-import os
-import json
+from time import sleep
 from aws_tools.s3 import upload_stream_archive_configuration
+
+
+def _wait_till_not_running_steps(cluster_id, profile='default'):
+    emr_client = boto3.session.Session(profile_name=profile).client('emr')
+
+    try:
+        for attempts in range(0, 60):
+            state = emr_client.describe_cluster(ClusterId=cluster_id)['Cluster']['Status']['State']
+            if state == 'WAITING':
+                return "Cluster is ready."
+            elif state == 'TERMINATING' or state == 'TERMINATED_WITH_ERRORS' or state == 'TERMINATED':
+                return "Cluster was terminated while waiting with the state: " + state
+            sleep(10)
+    except Exception as aws_except:
+        raise ValueError(aws_except)
+
+    return "Cluster failed to finish step timely."
 
 
 def get_master_address(cluster_id, profile='default'):
@@ -174,7 +190,7 @@ def terminate_emr_cluster(cluster_ids=None, profile='default'):
         raise ValueError(aws_except)
 
 
-def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, profile='default'):
+def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, profile='default', wait_until_ready=False):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
     s3_url = "s3://" + s3_config['resourcesBucket'] + "/" + s3_config['resourcesPrefix']
@@ -208,11 +224,14 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, pro
             Steps=steps_to_add
         )
         print(return_json)
+        if wait_until_ready:
+            print("Waiting option selected. Waiting until step(s) complete.")
+            print(_wait_till_not_running_steps(cluster_id, profile))
     except Exception as aws_except:
         raise ValueError(aws_except)
 
 
-def configure_stream_archives(cluster_id, s3_config=None, archives_configs=None, profile='default'):
+def configure_stream_archives(cluster_id, s3_config=None, archives_configs=None, profile='default', wait_until_ready=False):
     archives = {}
 
     for archive in archives_configs:
@@ -277,5 +296,8 @@ def configure_stream_archives(cluster_id, s3_config=None, archives_configs=None,
             ]
         )
         print(return_json)
+        if wait_until_ready:
+            print("Waiting option selected. Waiting until step complete.")
+            print(_wait_till_not_running_steps(cluster_id, profile))
     except Exception as aws_except:
         raise ValueError(aws_except)

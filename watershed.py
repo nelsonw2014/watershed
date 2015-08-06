@@ -71,16 +71,6 @@ Python/Boto solution which compliments Amazon Kinesis with:
         help="Specify the AWS profile to use. Defaults to 'default'",
         default='default'
     )
-    _stream_folder_args = [
-        '-s',
-        '--stream-folder'
-    ]
-    _stream_folder_kwargs = dict(
-        action="store",
-        help="Specify the configuration folder for the streams",
-        required=True,
-        type=str
-    )
     _wait_until_ready_args = [
         '-w',
         '--wait-until-ready'
@@ -161,7 +151,6 @@ Python/Boto solution which compliments Amazon Kinesis with:
         help="Push configuration for querying streams directly"
     )
     configure_stream_table_parser.set_defaults(which="configure-stream-tables")
-    configure_stream_table_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     configure_stream_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_stream_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
 
@@ -171,7 +160,6 @@ Python/Boto solution which compliments Amazon Kinesis with:
         help="Push configuration for querying stream archives"
     )
     configure_stream_archives_parser.set_defaults(which="configure-stream-archives")
-    configure_stream_archives_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     configure_stream_archives_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_stream_archives_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
     wait_for_cluster_parser = subparsers.add_parser(
@@ -187,7 +175,6 @@ Python/Boto solution which compliments Amazon Kinesis with:
         help="Start a cluster and forward ports using configuration files"
     )
     do_everything_parser.set_defaults(which='all')
-    do_everything_parser.add_argument(*_stream_folder_args, **_stream_folder_kwargs)
     do_everything_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     do_everything_parser.add_argument(*_private_key_args, **_private_key_kwargs)
     do_everything_parser.add_argument(*_logging_args, **_logging_kwargs)
@@ -240,14 +227,14 @@ if __name__ == "__main__":
             configure_stream_tables(
                 args.cluster_id,
                 config['AWS']['S3'],
-                args.stream_folder,
+                config['AWS']['streams'],
                 config['AWS']['profile']
             )
         elif args.which == "configure-stream-archives":
             configure_stream_archives(
                 args.cluster_id,
                 config['AWS']['S3'],
-                args.stream_folder,
+                config['AWS']['archives'],
                 config['AWS']['profile']
             )
         elif args.which == "wait-for-cluster":
@@ -273,13 +260,13 @@ if __name__ == "__main__":
             configure_stream_tables(
                 cluster_id,
                 config['AWS']['S3'],
-                args.stream_folder,
+                config['AWS']['streams'],
                 config['AWS']['profile']
             )
             configure_stream_archives(
                 cluster_id,
                 config['AWS']['S3'],
-                args.stream_folder,
+                config['AWS']['archives'],
                 config['AWS']['profile']
             )
             forward_necessary_ports(

@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_stream_tables_and_archives, wait_for_cluster
+from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_streams, wait_for_cluster
 from ssh_tools.ssh import forward_necessary_ports
 
 
@@ -146,11 +146,11 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
     configure_streams_parser = subparsers.add_parser(
-        'configure-stream-tables-and-archives',
+        'configure-streams',
         aliases=['c'],
-        help="Push configuration for querying streams directly"
+        help="Push configuration for querying streams and stream archives directly"
     )
-    configure_streams_parser.set_defaults(which="configure-stream-tables-and-archives")
+    configure_streams_parser.set_defaults(which="configure-streams")
     configure_streams_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_streams_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
 
@@ -215,8 +215,8 @@ if __name__ == "__main__":
                 args.cluster_ids,
                 args.profile
             )
-        elif args.which == "configure-stream-tables-and-archives":
-            configure_stream_tables_and_archives(
+        elif args.which == "configure-streams":
+            configure_streams(
                 args.cluster_id,
                 config['AWS']['S3'],
                 config['AWS']['streams'],
@@ -244,7 +244,7 @@ if __name__ == "__main__":
                 True,
                 args.logging
             )
-            configure_stream_tables_and_archives(
+            configure_streams(
                 cluster_id,
                 config['AWS']['S3'],
                 config['AWS']['streams'],

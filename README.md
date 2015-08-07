@@ -59,27 +59,27 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
 
 # Getting Started
 * Install watershed
- * You can install watershed for use with the command `python3 setup.py install`
-  * This makes watershed executable from the commandline with **python3 -m watershed** from any location
- * If you're developing watershed, use `python3 setup.py develop`
-  * This only installs dependencies. As a result, you must be in the watershed repo directory to run watershed in this case
-  * We recommend you establish a virtual environment for development
-   * `pip3 install virtualenv`
-   * To make a new virtual environment, run `virtualenv <env_name>`
-   * This creates an environment folder in the directory
-   * To activate the virtual development environment, run `source <env_name>/bin/activate`
-   * Now, run any setup or applications as you would normally
-   * More info on virtualenv can be found [here](https://virtualenv.pypa.io/en/latest/userguide.html)
+    * You can install watershed for use with the command `python3 setup.py install`
+         * This makes watershed executable from the commandline with **python3 -m watershed** from any location
+    * If you're developing watershed, use `python3 setup.py develop`
+         * This only installs dependencies. As a result, you must be in the watershed repo directory to run watershed in this case
+         * We recommend you establish a virtual environment for development
+              * `pip3 install virtualenv`
+              * To make a new virtual environment, run `virtualenv <env_name>`
+              * This creates an environment folder in the directory
+              * To activate the virtual development environment, run `source <env_name>/bin/activate`
+              * Now, run any setup or applications as you would normally
+              * More info on virtualenv can be found [here](https://virtualenv.pypa.io/en/latest/userguide.html)
 * Create a config file
- * Make a copy of `conf/defaults.json` and edit the copy
+    * Make a copy of `conf/defaults.json` and edit the copy
 * Run `python3 -m watershed all -c <config-file> -k <private-key-file>`
- * Ctrl-C will stop the forwarding at any time.
- * `-t` will terminate the cluster on closing of port forwarding
+    * Ctrl-C will stop the forwarding at any time.
+    * `-t` will terminate the cluster on closing of port forwarding
 * For additional information, use the `-h` argument without any arguments or with any subcommand:
- * upload-resources (u)
- * launch-cluster (l)
- * wait-for-cluster (w)
- * forward-local-ports (f)
- * configure-stream-tables-and-archives (c)
- * terminate-cluster (t)
- * all (all)
+    * upload-resources (u)
+    * launch-cluster (l)
+    * wait-for-cluster (w)
+    * forward-local-ports (f)
+    * configure-stream-tables-and-archives (c)
+    * terminate-cluster (t)
+    * all (all)

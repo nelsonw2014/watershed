@@ -145,14 +145,14 @@ Python/Boto solution which compliments Amazon Kinesis with:
         required=True
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
-    configure_stream_table_parser = subparsers.add_parser(
+    configure_streams_parser = subparsers.add_parser(
         'configure-stream-tables-and-archives',
         aliases=['c'],
         help="Push configuration for querying streams directly"
     )
-    configure_stream_table_parser.set_defaults(which="configure-stream-tables-and-archives")
-    configure_stream_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
-    configure_stream_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    configure_streams_parser.set_defaults(which="configure-stream-tables-and-archives")
+    configure_streams_parser.add_argument(*_config_file_args, **_config_file_kwargs)
+    configure_streams_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
     wait_for_cluster_parser = subparsers.add_parser(
         'wait-for-cluster',
         aliases=['w'],

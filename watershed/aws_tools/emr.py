@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import boto3
 from time import sleep
-from aws_tools.s3 import upload_stream_archive_configuration
+
+import boto3
+
+from watershed.aws_tools.s3 import upload_stream_archive_configuration
 
 
 def _wait_till_not_running_steps(cluster_id, profile='default'):

@@ -17,9 +17,10 @@
 import argparse
 import json
 import os
-from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_streams, wait_for_cluster
-from ssh_tools.ssh import forward_necessary_ports
+
+from watershed.aws_tools.s3 import upload_resources
+from watershed.aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_streams, wait_for_cluster
+from watershed.ssh_tools.ssh import forward_necessary_ports
 
 
 def get_argument_parser():

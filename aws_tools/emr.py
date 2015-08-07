@@ -281,7 +281,7 @@ def configure_stream_archives(cluster_id, s3_config=None, archive_configs=None, 
         raise ValueError(aws_except)
 
 
-def configure_stream_tables_and_archives(cluster_id, s3_config=None, stream_configs=None, archive_configs=None, profile='default'):
+def configure_streams(cluster_id, s3_config=None, stream_configs=None, archive_configs=None, profile='default'):
     try:
         configure_stream_tables(cluster_id, s3_config, stream_configs, profile)
         configure_stream_archives(cluster_id, s3_config, archive_configs, profile)

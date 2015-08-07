@@ -190,7 +190,7 @@ def terminate_emr_cluster(cluster_ids=None, profile='default'):
         raise ValueError(aws_except)
 
 
-def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, profile='default', wait_until_ready=False):
+def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, profile='default'):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
     s3_url = "s3://" + s3_config['resourcesBucket'] + "/" + s3_config['resourcesPrefix']
@@ -224,17 +224,14 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, pro
             Steps=steps_to_add
         )
         print(return_json)
-        if wait_until_ready:
-            print("Waiting option selected. Waiting until step(s) complete.")
-            print(_wait_till_not_running_steps(cluster_id, profile))
     except Exception as aws_except:
         raise ValueError(aws_except)
 
 
-def configure_stream_archives(cluster_id, s3_config=None, archives_configs=None, profile='default', wait_until_ready=False):
+def configure_stream_archives(cluster_id, s3_config=None, archive_configs=None, profile='default'):
     archives = {}
 
-    for archive in archives_configs:
+    for archive in archive_configs:
         dfs_url = archive['dfsUrl']
         archive_path = archive['path']
         archive_name = archive['name']
@@ -296,8 +293,16 @@ def configure_stream_archives(cluster_id, s3_config=None, archives_configs=None,
             ]
         )
         print(return_json)
+    except Exception as aws_except:
+        raise ValueError(aws_except)
+
+
+def configure_stream_tables_and_archives(cluster_id, s3_config=None, stream_configs=None, archive_configs=None, profile='default', wait_until_ready=False):
+    try:
+        configure_stream_tables(cluster_id, s3_config, stream_configs, profile)
+        configure_stream_archives(cluster_id, s3_config, archive_configs, profile)
         if wait_until_ready:
-            print("Waiting option selected. Waiting until step complete.")
+            print("Waiting option selected. Waiting until step(s) complete.")
             print(_wait_till_not_running_steps(cluster_id, profile))
     except Exception as aws_except:
         raise ValueError(aws_except)

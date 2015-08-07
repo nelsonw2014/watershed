@@ -62,7 +62,7 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
 # Getting Started
 * Create a config file. 
  * Make a copy of **conf/defaults.json** and edit the copy
-* Run **python3 watershed.py all -c &lt;config-file&gt; -k &lt;private-key-file&gt; -s &lt;stream-config-folder&gt;**
+* Run **python3 watershed.py all -c &lt;config-file&gt; -k &lt;private-key-file&gt;**
  * Ctrl-C will stop the forwarding at any time.
  * **-t** will terminate the cluster on closing of port forwarding
 * For additional information, use the **-h** argument without any arguments or with any subcommand:
@@ -70,7 +70,6 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
  * launch-cluster (l)
  * wait-for-cluster (w)
  * forward-local-ports (f)
- * configure-stream-tables (cs)
- * configure-stream-archives (ca)
+ * configure-stream-tables-and-archives (c)
  * terminate-cluster (t)
  * all (all)

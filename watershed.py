@@ -18,7 +18,7 @@ import argparse
 import json
 import os
 from aws_tools.s3 import upload_resources
-from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_stream_tables, configure_stream_archives, wait_for_cluster
+from aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_stream_tables_and_archives, wait_for_cluster
 from ssh_tools.ssh import forward_necessary_ports
 
 
@@ -145,24 +145,15 @@ Python/Boto solution which compliments Amazon Kinesis with:
         required=True
     )
     terminate_clusters_parser.add_argument(*_profile_args, **_profile_kwargs)
-    configure_stream_table_parser = subparsers.add_parser(
-        'configure-stream-tables',
-        aliases=['cs'],
+    configure_streams_parser = subparsers.add_parser(
+        'configure-stream-tables-and-archives',
+        aliases=['c'],
         help="Push configuration for querying streams directly"
     )
-    configure_stream_table_parser.set_defaults(which="configure-stream-tables")
-    configure_stream_table_parser.add_argument(*_config_file_args, **_config_file_kwargs)
-    configure_stream_table_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
-    configure_stream_table_parser.add_argument(*_wait_until_ready_args, **_wait_until_ready_kwargs)
-    configure_stream_archives_parser = subparsers.add_parser(
-        'configure-stream-archives',
-        aliases=['ca'],
-        help="Push configuration for querying stream archives"
-    )
-    configure_stream_archives_parser.set_defaults(which="configure-stream-archives")
-    configure_stream_archives_parser.add_argument(*_config_file_args, **_config_file_kwargs)
-    configure_stream_archives_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
-    configure_stream_archives_parser.add_argument(*_wait_until_ready_args, **_wait_until_ready_kwargs)
+    configure_streams_parser.set_defaults(which="configure-stream-tables-and-archives")
+    configure_streams_parser.add_argument(*_config_file_args, **_config_file_kwargs)
+    configure_streams_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+
     wait_for_cluster_parser = subparsers.add_parser(
         'wait-for-cluster',
         aliases=['w'],
@@ -224,18 +215,11 @@ if __name__ == "__main__":
                 args.cluster_ids,
                 args.profile
             )
-        elif args.which == "configure-stream-tables":
-            configure_stream_tables(
+        elif args.which == "configure-stream-tables-and-archives":
+            configure_stream_tables_and_archives(
                 args.cluster_id,
                 config['AWS']['S3'],
                 config['AWS']['streams'],
-                config['AWS']['profile'],
-                args.wait_until_ready
-            )
-        elif args.which == "configure-stream-archives":
-            configure_stream_archives(
-                args.cluster_id,
-                config['AWS']['S3'],
                 config['AWS']['archives'],
                 config['AWS']['profile'],
                 args.wait_until_ready
@@ -260,16 +244,10 @@ if __name__ == "__main__":
                 True,
                 args.logging
             )
-            configure_stream_tables(
+            configure_stream_tables_and_archives(
                 cluster_id,
                 config['AWS']['S3'],
                 config['AWS']['streams'],
-                config['AWS']['profile'],
-                True
-            )
-            configure_stream_archives(
-                cluster_id,
-                config['AWS']['S3'],
                 config['AWS']['archives'],
                 config['AWS']['profile'],
                 True

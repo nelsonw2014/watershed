@@ -79,6 +79,6 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
     * launch-cluster (l)
     * wait-for-cluster (w)
     * forward-local-ports (f)
-    * configure-stream-tables-and-archives (c)
+    * configure-streams (c)
     * terminate-cluster (t)
     * all (all)

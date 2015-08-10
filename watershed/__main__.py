@@ -154,6 +154,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     configure_streams_parser.set_defaults(which="configure-streams")
     configure_streams_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_streams_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+    configure_streams_parser.add_argument(*_wait_until_ready_args, **_wait_until_ready_kwargs)
 
     wait_for_cluster_parser = subparsers.add_parser(
         'wait-for-cluster',

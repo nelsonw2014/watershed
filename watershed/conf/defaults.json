@@ -18,16 +18,19 @@
       "amiVersion": "3.8.0",
       "instanceGroups": [
         {
+          "Name": "EMR Master",
           "InstanceRole": "MASTER",
           "InstanceCount": 1,
           "InstanceType": "m3.xlarge"
         },
         {
+          "Name": "EMR Core",
           "InstanceRole": "CORE",
           "InstanceCount": 1,
           "InstanceType": "m3.xlarge"
         },
         {
+          "Name": "EMR Task",
           "InstanceRole": "TASK",
           "InstanceCount": 1,
           "InstanceType": "m3.xlarge"

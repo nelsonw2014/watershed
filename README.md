@@ -29,11 +29,9 @@ installed and configured.
 * This will probably be more of an ephemeral tool than a service, but the
 archival portion will have to run at least once every 24 hours (the Kinesis
 record expiration time) in order to not miss any records.
-* The initial implementation might only support JSON records, but further
-contributions should be able to remove that as a requirement.
-* The initial implementation might only support a single Kinesis stream, but
-further contributions should be able to remove that as a requirement.
-* Data and cluster security is currently left to the user. Users will have varied needs for security around data, networks, authentication, authorization. The goal is to enable users to apply that security out-of-band or via flexible configuration hooks, so the project needn't support every possible combination. 
+* The initial implementation might only support full functionality with JSON records, but further
+contributions should be able to remove that as a requirement. Avro and Parquet formats are of future interest.
+* Data and cluster security is currently left to the user. Users will have varied needs for security around data, networks, authentication, authorization. The goal is to enable users to apply that security out-of-band or via flexible configuration hooks, so the project needn't support every possible combination. Approriate use of restricted IAM Users and Roles is encouraged, as is the use of truly private SSH keys.
 
 ## Technical Goals
 * Configure and launch a process (TBD, there are many options) to archive

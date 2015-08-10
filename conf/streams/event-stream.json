@@ -1,9 +1,0 @@
-{
-  "tableName": "app_event",
-  "streamName": "app_event_stream",
-  "archive":{
-    "dfsUrl": "s3n://AccessKey:SecretKey@watershed",
-    "path": "/stream-archives",
-    "name": "app_event"
-  }
-}

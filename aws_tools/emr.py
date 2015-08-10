@@ -174,24 +174,15 @@ def terminate_emr_cluster(cluster_ids=None, profile='default'):
         raise ValueError(aws_except)
 
 
-def configure_stream_tables(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
+def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, profile='default'):
     emr_client = boto3.session.Session(profile_name=profile).client('emr')
 
     s3_url = "s3://" + s3_config['resourcesBucket'] + "/" + s3_config['resourcesPrefix']
-    stream_configs = []
-    for folder in os.walk(stream_config_folder):
-        # for all directories within the local_resources_directory
-        if folder[2]:
-            # if there are files in the directory
-            for file in folder[2]:
-                if ".json" in file:
-                    with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
-                        stream_configs.append(json.load(stream_config_fp))
 
     steps_to_add = []
     for stream_config in stream_configs:
         steps_to_add.append({
-            'Name': 'hive_create_table_' + stream_config['tableName'] + '_for_stream_' + stream_config['streamName'],
+            'Name': 'hive_create_table_' + stream_config['table'] + '_for_stream_' + stream_config['stream'],
             'HadoopJarStep': {
                 'Jar': "s3://us-east-1.elasticmapreduce/libs/script-runner/script-runner.jar",
                 'Args': [
@@ -203,9 +194,9 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_config_folder=Non
                     '-f',
                     s3_url + '/emr/hive/create_table_for_stream',
                     '-hiveconf',
-                    'tablename=' + stream_config['tableName'],
+                    'tablename=' + stream_config['table'],
                     '-hiveconf',
-                    'streamname=' + stream_config['streamName']
+                    'streamname=' + stream_config['stream']
                 ]
             },
             'ActionOnFailure': 'CANCEL_AND_WAIT'
@@ -221,22 +212,13 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_config_folder=Non
         raise ValueError(aws_except)
 
 
-def configure_stream_archives(cluster_id, s3_config=None, stream_config_folder=None, profile='default'):
+def configure_stream_archives(cluster_id, s3_config=None, archive_configs=None, profile='default'):
     archives = {}
-    stream_configs = []
-    for folder in os.walk(stream_config_folder):
-        # for all directories within the local_resources_directory
-        if folder[2]:
-            # if there are files in the directory
-            for file in folder[2]:
-                if ".json" in file:
-                    with open(folder[0].rstrip('/')+'/'+file, 'r') as stream_config_fp:
-                        stream_configs.append(json.load(stream_config_fp))
 
-    for stream in stream_configs:
-        dfs_url = stream['archive']['dfsUrl']
-        archive_path = stream['archive']['path']
-        archive_name = stream['archive']['name']
+    for archive in archive_configs:
+        dfs_url = archive['dfsUrl']
+        archive_path = archive['path']
+        archive_name = archive['name']
         if dfs_url not in archives:
             archives[dfs_url] = []
         if archive_path not in archives[dfs_url]:
@@ -295,5 +277,13 @@ def configure_stream_archives(cluster_id, s3_config=None, stream_config_folder=N
             ]
         )
         print(return_json)
+    except Exception as aws_except:
+        raise ValueError(aws_except)
+
+
+def configure_streams(cluster_id, s3_config=None, stream_configs=None, archive_configs=None, profile='default'):
+    try:
+        configure_stream_tables(cluster_id, s3_config, stream_configs, profile)
+        configure_stream_archives(cluster_id, s3_config, archive_configs, profile)
     except Exception as aws_except:
         raise ValueError(aws_except)

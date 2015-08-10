@@ -163,7 +163,8 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 Steps=steps,
                 BootstrapActions=bootstrap_actions,
                 ServiceRole=emr_config['roles']['service'],
-                JobFlowRole=emr_config['roles']['ec2']
+                JobFlowRole=emr_config['roles']['ec2'],
+                Tags=emr_config['tags']
             )
         else:
             return_json = emr_client.run_job_flow(
@@ -174,7 +175,8 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 Steps=steps,
                 BootstrapActions=bootstrap_actions,
                 ServiceRole=emr_config['roles']['service'],
-                JobFlowRole=emr_config['roles']['ec2']
+                JobFlowRole=emr_config['roles']['ec2'],
+                Tags=emr_config['tags']
             )
         print(return_json)
         if wait_until_ready:

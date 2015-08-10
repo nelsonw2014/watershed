@@ -49,7 +49,6 @@ to expose an Amazon Kinesis stream as an externally-stored table.
 * Configure the Amazon EMR Hive
 [Metastore](https://drill.apache.org/docs/hive-storage-plugin/) for consumption
 by Apache Drill.
-* Configure Apache Drill to read from Amazon Kinesis via Amazon EMR Hive.
 * To the greatest extent possible without storing another copy of the data,
 provide a unified and de-duplicated view spanning current and archived Amazon Kinesis records.
 * (TBD) Provide a basic UI or API to initiate search and replay operations, and monitor progress.

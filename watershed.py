@@ -78,7 +78,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     _wait_until_ready_kwargs = dict(
         action="store_const",
         const=True,
-        help="Wait until cluster launches (takes five minutes or more)"
+        help="Wait until cluster launches (takes five minutes or more) or for steps to complete"
     )
     _logging_args = [
         '-l',
@@ -153,6 +153,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     configure_streams_parser.set_defaults(which="configure-streams")
     configure_streams_parser.add_argument(*_config_file_args, **_config_file_kwargs)
     configure_streams_parser.add_argument(*_cluster_id_args, **_cluster_id_kwargs)
+
     wait_for_cluster_parser = subparsers.add_parser(
         'wait-for-cluster',
         aliases=['w'],
@@ -220,7 +221,8 @@ if __name__ == "__main__":
                 config['AWS']['S3'],
                 config['AWS']['streams'],
                 config['AWS']['archives'],
-                config['AWS']['profile']
+                config['AWS']['profile'],
+                args.wait_until_ready
             )
         elif args.which == "wait-for-cluster":
             print("Cluster can take more than 5 minutes to start...")
@@ -247,7 +249,8 @@ if __name__ == "__main__":
                 config['AWS']['S3'],
                 config['AWS']['streams'],
                 config['AWS']['archives'],
-                config['AWS']['profile']
+                config['AWS']['profile'],
+                True
             )
             forward_necessary_ports(
                 cluster_id,

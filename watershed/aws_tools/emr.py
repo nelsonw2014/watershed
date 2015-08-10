@@ -138,9 +138,16 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
         }
     ]
 
+    instance_groups = []
+
+    for group in emr_config['instanceGroups']:
+        if "Name" not in group:
+            group["Name"] = "EMR " + group["InstanceRole"]
+            instance_groups.append(group)
+
     instances = {
         'KeepJobFlowAliveWhenNoSteps': True,
-        'InstanceGroups': emr_config['instanceGroups'],
+        'InstanceGroups': instance_groups,
         'Ec2KeyName': emr_config['ec2KeyName'] if emr_config['ec2KeyName'] is not None else "",
         'Ec2SubnetId': emr_config['ec2SubnetId'] if emr_config['ec2SubnetId'] is not None else "",
         'AdditionalMasterSecurityGroups': emr_config['additionalMasterSecurityGroups'] if emr_config['additionalMasterSecurityGroups'] is not None else []
@@ -156,7 +163,8 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 Steps=steps,
                 BootstrapActions=bootstrap_actions,
                 ServiceRole=emr_config['roles']['service'],
-                JobFlowRole=emr_config['roles']['ec2']
+                JobFlowRole=emr_config['roles']['ec2'],
+                Tags=emr_config['tags']
             )
         else:
             return_json = emr_client.run_job_flow(
@@ -167,7 +175,8 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 Steps=steps,
                 BootstrapActions=bootstrap_actions,
                 ServiceRole=emr_config['roles']['service'],
-                JobFlowRole=emr_config['roles']['ec2']
+                JobFlowRole=emr_config['roles']['ec2'],
+                Tags=emr_config['tags']
             )
         print(return_json)
         if wait_until_ready:

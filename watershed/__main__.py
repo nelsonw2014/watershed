@@ -92,7 +92,7 @@ Python/Boto solution which compliments Amazon Kinesis with:
     )
 
     parser = argparse.ArgumentParser(
-        prog=os.path.basename(__file__),
+        prog=os.path.dirname(__file__),
         description=_fc_description,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )

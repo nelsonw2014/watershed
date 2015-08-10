@@ -19,6 +19,10 @@ if __name__ == "__main__":
             "Boto3",
             "sshtunnel"
         ],
+        test_requires=[
+            'nose',
+            'requests'
+        ],
         include_package_data=True,
         classifiers=[
             'Environment :: Console',

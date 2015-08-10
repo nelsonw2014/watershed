@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sshtunnel import SSHTunnelForwarder
-from aws_tools.emr import get_master_address
 from time import sleep
+
+from sshtunnel import SSHTunnelForwarder
+
+from watershed.aws_tools.emr import get_master_address
 
 
 def forward_necessary_ports(cluster_id=None, private_key_path=None, profile='default'):

@@ -4,6 +4,7 @@ import requests
 import json
 from signal import SIGINT
 from time import sleep
+from nose.tools import assert_equal, assert_in
 
 def end_to_end_test():
     """Launch and query cluster"""
@@ -14,7 +15,7 @@ def end_to_end_test():
     private_key_file = os.environ.get('PRIVATE_KEY_FILE')
     assert os.path.isfile(private_key_file)
 
-    assert 0 == subprocess.check_call(
+    assert_equal(0, subprocess.check_call(
         [
             "python3",
             "-m",
@@ -24,7 +25,7 @@ def end_to_end_test():
             conf_file,
             "-f"
         ]
-    )
+    ))
 
     print("Launching cluster.")
     launch_output = subprocess.check_output(
@@ -79,11 +80,11 @@ def end_to_end_test():
                 pass
 
             if r is not None and hasattr(r, "status_code"):
-                assert r.status_code == 200
+                assert_equal(r.status_code, 200)
                 query = json.loads(r.text)
-                assert len(query["rows"]) == 1
-                assert "cnt" in query["rows"][0]
-                assert query["rows"][0]["cnt"] == "1155"
+                assert_equal(len(query["rows"]), 1)
+                assert_in("cnt", query["rows"][0])
+                assert_equal(query["rows"][0]["cnt"] == "1155")
                 break
             sleep(1)
 

@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 from time import sleep
 
-from sshtunnel import SSHTunnelForwarder
+from sshtunnel import SSHTunnelForwarder, create_logger
 
 from watershed.aws_tools.emr import get_master_address
 
@@ -22,9 +24,9 @@ from watershed.aws_tools.emr import get_master_address
 def forward_necessary_ports(cluster_id=None, private_key_path=None, profile='default'):
     master_public_address = str(get_master_address(cluster_id, profile))
 
+    forwarder_logger = create_logger(loglevel=40)
     ports = {
         'drill_ui_port': 8047,
-        'hue_port': 8888,
         'resmgr_port': 9026,
         'namenode_port': 9101,
         'zookeeper_port': 2181,
@@ -43,13 +45,17 @@ def forward_necessary_ports(cluster_id=None, private_key_path=None, profile='def
                 ssh_username='hadoop',
                 ssh_private_key=private_key_path,
                 local_bind_address=('localhost', port_number),
-                remote_bind_address=(master_public_address, port_number)
+                remote_bind_address=(master_public_address, port_number),
+                logger=forwarder_logger
             )
         )
 
     try:
         for forwarder in port_forwarders:
-            forwarder.start()
+            try:
+                forwarder.start()
+            except:
+                pass
         print("\n\nForwarding necessary ports. Ctrl-C will terminate port forwarding.\n")
         print("Ports forwarded:\n==============================\n")
         for port in ports.keys():
@@ -58,5 +64,6 @@ def forward_necessary_ports(cluster_id=None, private_key_path=None, profile='def
         while True:
             sleep(1)
     except KeyboardInterrupt:
+        print("Stopping port forwarding.")
         for forwarder in port_forwarders:
             forwarder.stop()

@@ -12,3 +12,5 @@ out/
 *.iml
 *.ipr
 */__pycache__/
+*.pyc
+ 

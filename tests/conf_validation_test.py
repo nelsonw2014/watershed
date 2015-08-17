@@ -34,14 +34,14 @@ def setup_forwarding():
     global cluster_id
     global forwarding_process
 
-    conf_file = os.environ.get('WATERSHED_CONFIG')
+    conf_file = os.environ['WATERSHED_CONFIG']
     assert os.path.isfile(conf_file)
     conf = json.load(open(conf_file))
 
-    private_key_file = os.environ.get('PRIVATE_KEY_FILE')
+    private_key_file = os.environ['PRIVATE_KEY_FILE']
     assert os.path.isfile(private_key_file)
 
-    cluster_id = os.environ.get('CLUSTER_ID')
+    cluster_id = os.environ['CLUSTER_ID']
     print('Using profile \'' + conf['AWS']['profile'] + '\' to query cluster')
     emr_client = boto3.session.Session(profile_name=conf['AWS']['profile']).client('emr')
     cluster_description = emr_client.describe_cluster(ClusterId=cluster_id)

@@ -79,3 +79,12 @@ provide a unified and de-duplicated view spanning current and archived Amazon Ki
     * configure-streams (c)
     * terminate-cluster (t)
     * all (all)
+* To run the acceptance test, run `python3 setup.py nosetests --tests tests/acceptance_test.py`
+    * You need two environment variables to be set for this to work:
+        * `PRIVATE_KEY_FILE` should be the private key setup for your EMR configuration, i.e. `/path/to/key.pem`
+        * `WATERSHED_CONFIG` should be the location of your configuration, i.e. `/path/to/defaults.json`
+* To run the configuration validation on a cluster already running, run `python3 setup.py nosetests --tests tests/conf_validation_test.py`
+    * You need three environment variables to be set for this to work:
+        * `CLUSTER_ID` should be the Cluster ID of the cluster you want to query, i.e. `j-XXXXXXXXXXXXX`
+        * `PRIVATE_KEY_FILE` should be the private key setup for your EMR configuration, i.e. `/path/to/key.pem`
+        * `WATERSHED_CONFIG` should be the location of your configuration, i.e. `/path/to/defaults.json`

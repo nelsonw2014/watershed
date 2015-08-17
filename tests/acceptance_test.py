@@ -9,10 +9,10 @@ from nose.tools import assert_equal, assert_in
 def end_to_end_test():
     """Launch and query cluster"""
 
-    conf_file = os.environ.get('WATERSHED_CONFIG')
+    conf_file = os.environ['WATERSHED_CONFIG']
     assert os.path.isfile(conf_file)
 
-    private_key_file = os.environ.get('PRIVATE_KEY_FILE')
+    private_key_file = os.environ['PRIVATE_KEY_FILE']
     assert os.path.isfile(private_key_file)
 
     assert_equal(0, subprocess.check_call(

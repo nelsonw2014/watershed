@@ -1,5 +1,5 @@
-conf/*.conf
-conf/defaults.conf
+watershed/conf/*.json
+!watershed/conf/defaults.json
 
 build/
 bin/
@@ -13,4 +13,5 @@ out/
 *.ipr
 */__pycache__/
 *.pyc
- 
+*.egg-info/
+

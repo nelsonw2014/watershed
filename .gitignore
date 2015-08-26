@@ -1,6 +1,7 @@
 conf/*.conf
 conf/defaults.conf
 
+tempjars/
 build/
 bin/
 out/
@@ -13,4 +14,6 @@ out/
 *.ipr
 */__pycache__/
 *.pyc
- 
+*.egg-info/
+.DS_Store
+.java-version

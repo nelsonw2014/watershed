@@ -1,0 +1,80 @@
+import com.github.jengelman.gradle.plugins.shadow.transformers.IncludeResourceTransformer
+
+plugins {
+    id "java"
+    id "groovy"
+    id "com.github.johnrengelman.shadow" version "1.2.2"
+    id "idea"
+    id "eclipse"
+    id "maven"
+}
+
+project.ext {
+    mainClassName = "com.commercehub.watershed.pump.WatershedPumpMain"
+    drillVersion = "1.1.0"
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = "2.6"
+}
+
+group "com.commercehub"
+version = "0.1.0"
+
+// Use Java 7 because that's what Drill and AWS EMR support
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
+
+
+repositories {
+    flatDir name: "ExternalJars", dirs: "tempjars"
+    jcenter()
+}
+
+dependencies {
+    compile(
+            "org.slf4j:slf4j-api:1.7.6",
+            "com.amazonaws:amazon-kinesis-producer:0.10.1",
+            "com.amazonaws:amazon-kinesis-client:1.5.1", //matched to release of KPL
+            "com.github.davidmoten:rxjava-jdbc:0.6.2",
+            "io.reactivex:rxjava:1.0.14",
+            "io.reactivex:rxjava-guava:1.0.2",
+    )
+
+    testCompile(
+            "org.spockframework:spock-core:1.0-groovy-2.4",
+            "org.codehaus.groovy:groovy-all:2.4.4:indy",
+    )
+
+    runtime(
+            "ch.qos.logback:logback-classic:1.1.2",
+    )
+}
+
+tasks.withType(GroovyCompile) {
+    groovyOptions.optimizationOptions.indy = true
+}
+
+jar.dependsOn "watershed-pump-support:assemble"
+assemble.dependsOn "shadowJar" // Include shadowed jar as part of standard project outputs
+shadowJar {
+    mergeServiceFiles()
+    destinationDir new File("${rootDir}/build/libs")
+    archiveName "${project.name}-${project.version}.shadow.jar"
+
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+
+    transform(IncludeResourceTransformer) {
+        file = project("watershed-pump-support").getTasksByName("shadowJar", false).first().outputs.files.getSingleFile()
+        resource = "watershed-pump-support.shadow.jar"
+    }
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": mainClassName
+        attributes "Built-By": System.getProperty("user.name")
+        attributes "Build-Jdk": System.getProperty("java.version")
+    }
+}

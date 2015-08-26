@@ -1,5 +1,5 @@
-conf/*.conf
-conf/defaults.conf
+watershed/conf/*.json
+!watershed/conf/defaults.json
 
 tempjars/
 build/

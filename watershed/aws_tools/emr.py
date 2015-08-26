@@ -143,7 +143,7 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
     for group in emr_config['instanceGroups']:
         if "Name" not in group:
             group["Name"] = "EMR " + group["InstanceRole"]
-            instance_groups.append(group)
+        instance_groups.append(group)
 
     instances = {
         'KeepJobFlowAliveWhenNoSteps': True,

@@ -30,7 +30,6 @@ public class Pump {
     private static final Logger log = LoggerFactory.getLogger(Pump.class);
     public static final int MAX_RECORDS_PER_SHARD_PER_SECOND = 1000; //Kinesis service limit, at least prior to aggregation
 
-    //TODO support replaying messages with their original explicitHashKey
     //TODO produce metrics
 
     private Database database;

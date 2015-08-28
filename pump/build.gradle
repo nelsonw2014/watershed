@@ -21,7 +21,7 @@ task wrapper(type: Wrapper) {
 group "com.commercehub"
 version = "0.1.0"
 
-// Use Java 7 because that's what Drill and AWS EMR support
+// Target Java7 because that's what Apache Drill and AWS EMR support
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
 
@@ -32,22 +32,28 @@ repositories {
 }
 
 dependencies {
+    compile("com.amazonaws:amazon-kinesis-producer:0.10.1") {
+        exclude module: "slf4j-simple"
+    }
     compile(
             "org.slf4j:slf4j-api:1.7.6",
-            "com.amazonaws:amazon-kinesis-producer:0.10.1",
-            "com.amazonaws:amazon-kinesis-client:1.5.1", //matched to release of KPL
+            "com.amazonaws:aws-java-sdk-kinesis:1.9.37",
             "com.github.davidmoten:rxjava-jdbc:0.6.2",
             "io.reactivex:rxjava:1.0.14",
             "io.reactivex:rxjava-guava:1.0.2",
-    )
-
-    testCompile(
-            "org.spockframework:spock-core:1.0-groovy-2.4",
-            "org.codehaus.groovy:groovy-all:2.4.4:indy",
+            "com.fasterxml.jackson.core:jackson-databind:2.3.2",
     )
 
     runtime(
             "ch.qos.logback:logback-classic:1.1.2",
+    )
+
+    testCompile("org.spockframework:spock-core:1.0-groovy-2.4") {
+        exclude module: "groovy-all"
+    }
+    testCompile(
+            "org.codehaus.groovy:groovy-all:2.4.4:indy",
+            "org.skyscreamer:jsonassert:1.2.3",
     )
 }
 

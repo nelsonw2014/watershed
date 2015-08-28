@@ -4,6 +4,11 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.davidmoten.rx.jdbc.ConnectionProvider;
 import com.github.davidmoten.rx.jdbc.Database;
 import com.google.common.base.Function;
@@ -13,11 +18,10 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
-import rx.schedulers.Schedulers;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -26,24 +30,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class WatershedPumpMain {
     private static final Logger log = LoggerFactory.getLogger(WatershedPumpMain.class);
-    private static final byte[] REPLAY_FLAGS;
     private static final int RECORDS_PER_CHUNK = 1000;
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    static {
-        try {
-            REPLAY_FLAGS = "{\"replay\":true,\"overwrite\":true,".getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Your JRE is broken", e);
-        }
-    }
 
     public static void main(String[] args) {
         java.security.Security.setProperty("networkaddress.cache.ttl" , "60");
         final Long limit = (args.length > 0) ? Long.parseLong(args[0]) : null;
         String stream = "FluxcapPrototype.AppEvent";
-        String sql = "SELECT e.documentPayload.orderId AS partitionKey, CONVERT_TO(e.documentPayload, 'JSON') AS data"
-                + " FROM `commercehub-alextest`.app_event.`AppEvent/2015/08/04/` e";
+        String sql = "SELECT partitionKey, rawData data FROM `commercehub-nonprod-pmogren-collector`.streams.`AppEvent/`";
         if (limit != null) {
             sql = sql + " LIMIT " + limit;
         }
@@ -134,22 +130,32 @@ public class WatershedPumpMain {
                     System.exit(3);
                 }
             }
-        } catch (Exception bs) {
-            log.warn("Failed to stop cleanly", bs);
+        } catch (Exception e) {
+            log.warn("Failed to stop cleanly", e);
             System.exit(4);
         }
 
     }
 
-    private static Function<byte[], byte[]> addReplayFlags() {
+    static Function<byte[], byte[]> addReplayFlags() {
         return new Function<byte[], byte[]>() {
             @Override
             public byte[] apply(byte[] input) {
-                //Note that we intentionally overwrite the first byte from 'input' to remove the old opening brace
-                byte[] newBytes = new byte[input.length + REPLAY_FLAGS.length - 1];
-                System.arraycopy(input, 0, newBytes, REPLAY_FLAGS.length - 1, input.length);
-                System.arraycopy(REPLAY_FLAGS, 0, newBytes, 0, REPLAY_FLAGS.length);
-                return newBytes;
+                try {
+                    JsonNode tree = objectMapper.readTree(input);
+                    if (JsonNodeType.OBJECT == tree.getNodeType()) {
+                        ObjectNode rootObject = (ObjectNode) tree;
+                        rootObject.set("replay", BooleanNode.TRUE);
+                        rootObject.set("overwrite", BooleanNode.TRUE);
+                    }
+                    ByteArrayOutputStream output = new ByteArrayOutputStream(input.length + 50);
+                    objectMapper.writeValue(output, tree);
+                    output.close();
+                    return output.toByteArray();
+                } catch (Exception e) {
+                    log.warn("Failed to add replay flags to record, using original record", e);
+                    return input;
+                }
             }
         };
     }

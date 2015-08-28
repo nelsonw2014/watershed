@@ -1,6 +1,7 @@
 watershed/conf/*.json
 !watershed/conf/defaults.json
 
+tempjars/
 build/
 bin/
 out/
@@ -15,4 +16,4 @@ out/
 *.pyc
 *.egg-info/
 .DS_Store
-
+.java-version

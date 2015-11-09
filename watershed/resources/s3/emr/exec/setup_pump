@@ -16,8 +16,8 @@
 
 
 S3_RESOURCE_DIR_URL=$1
-PUMP_BUILD_DIR="/etc/pump"
-PUMP_INSTALL_DIR="/opt/pump"
+PUMP_BUILD_DIR="~/pump"
+PUMP_INSTALL_DIR="~/pump"
 
 buildPump(){
     buildDir=$1
@@ -28,11 +28,11 @@ buildPump(){
     
     $( mkdir $buildDir )
     echo "Downloading pump..."
-    sudo aws s3 cp $s3Url/pump $buildDir --recursive || exit $?
+    aws s3 cp $s3Url/pump $buildDir --recursive || exit $?
     echo "Building pump..."
-    sudo chmod +x $buildDir/gradlew || exit $?
+    chmod +x $buildDir/gradlew || exit $?
     cd $buildDir
-    sudo ./gradlew clean build || exit $?
+    ./gradlew clean build || exit $?
     cd -
 }
 
@@ -41,12 +41,12 @@ installPump(){
     installDir=$2
     
     $( sudo mkdir $installDir )
-    sudo cp $buildDir/build/libs/watershed-pump-0.1.0.shadow.jar $installDir || exit $?
-    sudo aws s3 cp $s3Url/emr/pump/pump.conf.template $installDir || exit $?
-    sudo cp $installDir/pump.conf.template $installDir/pump.conf || exit $?
+    cp $buildDir/build/libs/watershed-pump-0.1.0.shadow.jar $installDir || exit $?
+    aws s3 cp $s3Url/emr/pump/pump.conf.template $installDir || exit $?
+    cp $installDir/pump.conf.template $installDir/pump.conf || exit $?
     
-    sudo sed -i "s|<installDir>|$installDir|g" $installDir/pump.conf || exit $?
-    sudo sed -i "s|<jarName>|watershed-pump-0.1.0.shadow.jar|g" $installDir/pump.conf || exit $?
+    sed -i "s|<installDir>|$installDir|g" $installDir/pump.conf || exit $?
+    sed -i "s|<jarName>|watershed-pump-0.1.0.shadow.jar|g" $installDir/pump.conf || exit $?
     sudo cp $installDir/pump.conf /etc/init/pump.conf || exit $?
     sudo initctl reload-configuration || exit $?
 }

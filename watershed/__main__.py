@@ -246,6 +246,11 @@ if __name__ == "__main__":
                 config['AWS']['profile'],
                 True
             )
+            upload_pump(
+                config['AWS']['S3'],
+                config['AWS']['profile'],
+                True
+            )
             cluster_id = launch_emr_cluster(
                 config['AWS']['S3'],
                 config['AWS']['EMR'],

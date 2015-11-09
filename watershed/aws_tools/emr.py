@@ -118,6 +118,15 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 'Path': s3_url+'/emr/exec/setup_python',
                 'Args': []
             }
+        },
+        {
+            'Name': 'setup_pump',
+            'ScriptBootstrapAction': {
+                'Path': s3_url+'/emr/exec/setup_pump',
+                'Args': [
+                    s3_url
+                ]
+            }
         }
     ]
     steps = [

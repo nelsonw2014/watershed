@@ -1,0 +1,16 @@
+start on runlevel [2345]
+stop on runlevel [016]
+
+chdir <installDir>
+
+respawn
+
+pre-start script
+end script
+
+script
+	exec java -server -d64 -Xms512M -Xmx512M -Djava.net.preferIPv4Stack=true -Dcom.sun.management.jmxremote.port=12000 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -jar <installDir>/<jarName>
+end script
+
+post-stop script
+end script

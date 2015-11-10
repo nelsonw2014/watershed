@@ -16,8 +16,8 @@
 
 
 S3_RESOURCE_DIR_URL=$1
-PUMP_BUILD_DIR="~/pump"
-PUMP_INSTALL_DIR="~/pump"
+PUMP_BUILD_DIR="/home/hadoop/pump"
+PUMP_INSTALL_DIR="/home/hadoop/pump"
 
 buildPump(){
     buildDir=$1

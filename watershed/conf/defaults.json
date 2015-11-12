@@ -52,7 +52,7 @@
     ],
     "archives": [
       {
-        "dfsUrl": "s3n://AccessKey:SecretKey@watershed",
+        "dfsUrl": "s3://AccessKey:SecretKey@watershed",
         "path": "/stream-archives",
         "name": "app_event"
       }

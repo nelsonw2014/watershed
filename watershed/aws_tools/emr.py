@@ -80,7 +80,9 @@ def launch_emr_cluster(s3_config=None, emr_config=None, profile="default", wait_
                 'Path': 's3://elasticmapreduce/bootstrap-actions/configure-hadoop',
                 'Args': [
                     "--hdfs-key-value",
-                    "dfs.replication=3"
+                    "dfs.replication=3",
+                    "--core-key-value",
+                    "io.compression.codecs=org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.BZip2Codec,org.apache.hadoop.io.compress.SnappyCodec"
                 ]
             }
         },

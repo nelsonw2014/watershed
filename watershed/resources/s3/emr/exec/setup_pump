@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# Copyright (C) 2015 Commerce Technologies, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+S3_RESOURCE_DIR_URL=$1
+PUMP_BUILD_DIR="/home/hadoop/pump"
+PUMP_INSTALL_DIR="/home/hadoop/pump"
+
+buildPump(){
+    buildDir=$1
+    s3Url=$2
+    
+    echo "buildDir: $buildDir"
+    echo "s3Url: $s3Url"
+    
+    $( mkdir $buildDir )
+    echo "Downloading pump..."
+    aws s3 cp $s3Url/pump $buildDir --recursive || exit $?
+    echo "Building pump..."
+    chmod +x $buildDir/gradlew || exit $?
+    cd $buildDir
+    ./gradlew clean build || exit $?
+    cd -
+}
+
+installPump(){
+    buildDir=$1
+    installDir=$2
+    
+    $( sudo mkdir $installDir )
+    cp $buildDir/build/libs/watershed-pump-0.1.0.shadow.jar $installDir || exit $?
+    aws s3 cp $s3Url/emr/pump/pump.conf.template $installDir || exit $?
+    cp $installDir/pump.conf.template $installDir/pump.conf || exit $?
+    
+    sed -i "s|<installDir>|$installDir|g" $installDir/pump.conf || exit $?
+    sed -i "s|<jarName>|watershed-pump-0.1.0.shadow.jar|g" $installDir/pump.conf || exit $?
+    sudo cp $installDir/pump.conf /etc/init/pump.conf || exit $?
+    sudo initctl reload-configuration || exit $?
+}
+
+startPump(){
+    sudo initctl start pump || exit $?
+}
+
+buildPump $PUMP_BUILD_DIR $S3_RESOURCE_DIR_URL
+installPump $PUMP_BUILD_DIR $PUMP_INSTALL_DIR
+startPump

@@ -19,6 +19,7 @@ import json
 import os
 
 from watershed.aws_tools.s3 import upload_resources
+from watershed.aws_tools.s3 import upload_pump
 from watershed.aws_tools.emr import launch_emr_cluster, terminate_emr_cluster, configure_streams, wait_for_cluster
 from watershed.ssh_tools.ssh import forward_necessary_ports
 
@@ -198,6 +199,12 @@ if __name__ == "__main__":
                 config['AWS']['profile'],
                 args.force_upload
             )
+            
+            upload_pump(
+                config['AWS']['S3'],
+                config['AWS']['profile'],
+                args.force_upload
+            )
         elif args.which == "launch-cluster":
             launch_emr_cluster(
                 config['AWS']['S3'],
@@ -235,6 +242,11 @@ if __name__ == "__main__":
             print("Cluster ready.")
         elif args.which == "all":
             upload_resources(
+                config['AWS']['S3'],
+                config['AWS']['profile'],
+                True
+            )
+            upload_pump(
                 config['AWS']['S3'],
                 config['AWS']['profile'],
                 True

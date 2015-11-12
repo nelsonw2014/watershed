@@ -35,7 +35,26 @@ def upload_resources(s3_config=None, profile="default", force_upload=False):
                     s3_file_path = s3_config['resourcesPrefix']+folder[0].split('resources/s3')[1]+"/"+file
                     s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=open(folder[0]+'/'+file, 'rb'))
                     file_upload_count += 1
-        print("Upload Successful, {0} files uploaded.".format(file_upload_count))
+        print("Resource upload successful, {0} files uploaded.".format(file_upload_count))
+                
+    except Exception as aws_except:
+        raise ValueError(aws_except)
+        
+        
+def upload_pump(s3_config=None, profile="default", force_upload=False):
+    s3_resource = boto3.session.Session(profile_name=profile).resource('s3')
+
+    try:
+        file_upload_count = 0
+        pump_root = os.path.dirname(os.path.abspath(__file__)).replace('/watershed/aws_tools', '/pump')
+        
+        for dirpath, dirs, files in os.walk(pump_root):
+            for file in files:
+                s3_file_path = s3_config['resourcesPrefix'] + dirpath.replace(pump_root, "/pump") + "/" + file
+                s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=open(dirpath + "/" + file, 'rb'))
+                file_upload_count += 1
+        
+        print("Pump upload successful, {0} files uploaded.".format(file_upload_count))
     except Exception as aws_except:
         raise ValueError(aws_except)
 

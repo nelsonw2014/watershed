@@ -238,6 +238,7 @@ def installDrill(targetDir, runDir, logDir)
     installZookeeper("/home/hadoop/drill", "#{runDir}/zookeeper", "#{logDir}/zookeeper")
 
     println "Configuring Apache Drill..."
+    sudo "ln -s /home/hadoop/conf/core-site.xml #{targetDir}/#{drillRoot}/conf/core-site.xml"
     sudo "chown -R hadoop.hadoop /home/hadoop/.versions/*drill*"
     sudo "mkdir -p #{runDir} && mkdir -p #{logDir}"
     sudo "chown -R hadoop.hadoop #{runDir}"

@@ -26,6 +26,12 @@ for f in /home/hadoop/share/hadoop/common/lib/emr-*.jar; do
   cp -af $f /home/hadoop/drill/jars/3rdparty/
 done
 
+cp -af /usr/share/aws/emr/emrfs/lib/emrfs-1.8.0.jar /home/hadoop/drill/jars/3rdparty/
+cp -af /usr/share/aws/emr/emrfs/lib/guice-3.0.jar /home/hadoop/drill/jars/3rdparty/
+cp -af /usr/share/aws/emr/emrfs/lib/commons-exec-1.2.jar /home/hadoop/drill/jars/3rdparty/
+cp -af /home/hadoop/lib/emr-s3distcp-1.0.jar /home/hadoop/drill/jars/3rdparty/
+cp -af /usr/share/aws/emr/emrfs/lib/jscience-4.3.1.jar /home/hadoop/drill/jars/3rdparty/
+
 #TODO be more selective with aws-java-sdk;
 #maybe leverage https://github.com/awslabs/emr-bootstrap-actions/blob/master/gradle/install-gradle-bootstrap.sh
 for pattern in aws-java-sdk gson; do

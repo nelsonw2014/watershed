@@ -7,16 +7,19 @@ plugins {
     id "idea"
     id "eclipse"
     id "maven"
+    id 'application'
 }
 
 project.ext {
-    mainClassName = "com.commercehub.watershed.pump.WatershedPumpMain"
     drillVersion = "1.1.0"
+    dropwizardVersion = '0.8.3'
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = "2.6"
 }
+
+mainClassName = "com.commercehub.watershed.pump.application.PumpApplication"
 
 group "com.commercehub"
 version = "0.1.0"
@@ -27,7 +30,6 @@ targetCompatibility = "1.7"
 
 
 repositories {
-    flatDir name: "ExternalJars", dirs: "tempjars"
     jcenter()
 }
 
@@ -42,6 +44,9 @@ dependencies {
             "io.reactivex:rxjava:1.0.14",
             "io.reactivex:rxjava-guava:1.0.2",
             "com.fasterxml.jackson.core:jackson-databind:2.3.2",
+            "com.google.inject:guice:4.0",
+            "com.hubspot.dropwizard:dropwizard-guice:0.8.3.0",
+            "io.dropwizard:dropwizard-core:${dropwizardVersion}"
     )
 
     runtime(

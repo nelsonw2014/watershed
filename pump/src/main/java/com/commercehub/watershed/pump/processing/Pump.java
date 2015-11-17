@@ -1,4 +1,4 @@
-package com.commercehub.watershed.pump;
+package com.commercehub.watershed.pump.processing;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -8,6 +8,7 @@ import com.amazonaws.services.kinesis.model.StreamDescription;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.commercehub.watershed.pump.SerializingProducer;
 import com.github.davidmoten.rx.jdbc.Database;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -82,43 +83,46 @@ public class Pump {
      * to be reported. To cancel pumping, unsubscribe.
      */
     public Observable<UserRecordResult> build() {
-        // Can't actually use rxjava-jdbc with Drill at the moment: Drill's JDBC client is broken wrt PreparedStatements (DRILL-3566)
+        // Can't actually use rxjava-jdbc with Drill at the moment: Drill'subscriber JDBC client is broken wrt PreparedStatements (DRILL-3566)
         // Also not sure whether rxjava-jdbc supports backpressure.
 //        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
 //            @Override
-//            public Record call(ResultSet rs) throws SQLException {
-//                return new Record().withPartitionKey(rs.getString("partitionKey")).
-//                        withData(ByteBuffer.wrap(rs.getBytes("data")));
+//            public Record call(ResultSet resultSet) throws SQLException {
+//                return new Record().withPartitionKey(resultSet.getString("partitionKey")).
+//                        withData(ByteBuffer.wrap(resultSet.getBytes("data")));
 //            }
 //        });
         Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
             @Override
-            public void call(final Subscriber<? super Record> s) {
-                final Connection c = getConnection(s);
-                final ResultSet rs = executeQuery(s, c);
-                JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(s, rs, c);
-                s.setProducer(jdbcRecordProducer);
+            public void call(final Subscriber<? super Record> subscriber) {
+                final Connection connection = getConnection(subscriber);
+
+                final ResultSet resultSet = executeQuery(subscriber, connection);
+
+                JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(subscriber, resultSet, connection);
+                subscriber.setProducer(jdbcRecordProducer);
+
                 jdbcRecordProducer.request(shardCount * MAX_RECORDS_PER_SHARD_PER_SECOND * kinesisConfig.getRateLimit() / 200);
             }
 
-            private ResultSet executeQuery(Subscriber<?> s, Connection c) {
-                ResultSet rs;
+            private ResultSet executeQuery(Subscriber<?> subscriber, Connection connection) {
+                ResultSet resultSet;
                 try {
                     log.info("Executing JDBC query {}", sql);
-                    rs = c.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(sql);
+                    resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(sql);
                     log.info("Got a JDBC ResultSet, streaming results.");
-                    rs.setFetchSize(Integer.MIN_VALUE);
+                    resultSet.setFetchSize(Integer.MIN_VALUE);
                 } catch (Exception e) {
-                    rs = null;
-                    s.onError(e);
+                    resultSet = null;
+                    subscriber.onError(e);
                 }
-                return rs;
+                return resultSet;
             }
 
             private Connection getConnection(Subscriber<?> s) {
                 Connection c;
                 try {
-                    log.info("Connecting to database.");
+                    log.info("Connecting to database...");
                     c = database.getConnectionProvider().get();
                 } catch (Exception e) {
                     c = null;
@@ -126,6 +130,7 @@ public class Pump {
                 }
                 return c;
             }
+
         }).subscribeOn(Schedulers.io());
 
         Observable<Record> transformedRecords;
@@ -173,35 +178,35 @@ public class Pump {
     }
 
     private static class JdbcRecordProducer extends SerializingProducer {
-        private final Subscriber<? super Record> s;
-        private final ResultSet rs;
-        private final Connection c;
+        private final Subscriber<? super Record> subscriber;
+        private final ResultSet resultSet;
+        private final Connection connection;
 
-        public JdbcRecordProducer(Subscriber<? super Record> s, ResultSet rs, Connection c) {
-            this.s = s;
-            this.rs = rs;
-            this.c = c;
+        public JdbcRecordProducer(Subscriber<? super Record> subscriber, ResultSet resultSet, Connection connection) {
+            this.subscriber = subscriber;
+            this.resultSet = resultSet;
+            this.connection = connection;
         }
 
         @Override
         protected boolean onItemRequested() {
             boolean keepGoing = true;
             try {
-                if (s.isUnsubscribed()) {
+                if (subscriber.isUnsubscribed()) {
                     keepGoing = false;
                     closeConnection();
                 } else {
-                    if (rs.next()) {
+                    if (resultSet.next()) {
                         log.trace("Got a JDBC result record");
-                        s.onNext(new Record().withPartitionKey(rs.getString("partitionKey")).
-                                withData(ByteBuffer.wrap(rs.getBytes("data"))));
+                        subscriber.onNext(new Record().withPartitionKey(resultSet.getString("partitionKey")).
+                                withData(ByteBuffer.wrap(resultSet.getBytes("data"))));
                     } else {
-                        s.onCompleted();
+                        subscriber.onCompleted();
                         keepGoing = false;
                     }
                 }
             } catch (Exception e) {
-                s.onError(e);
+                subscriber.onError(e);
                 keepGoing = false;
             }
             return keepGoing;
@@ -209,7 +214,7 @@ public class Pump {
 
         private void closeConnection() {
             try {
-                c.close();
+                connection.close();
             } catch (Exception e) {
                 log.warn("Failed to close database connection.", e);
             }

@@ -1,29 +1,10 @@
-package com.commercehub.watershed.pump;
+package com.commercehub.watershed.pump.processing;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.davidmoten.rx.jdbc.ConnectionProvider;
-import com.github.davidmoten.rx.jdbc.Database;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rx.Observable;
-import rx.Subscriber;
-import rx.Subscription;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
 import java.text.NumberFormat;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author pmogren
@@ -34,6 +15,7 @@ public class WatershedPumpMain {
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    /*
 
     public static void main(String[] args) {
         java.security.Security.setProperty("networkaddress.cache.ttl" , "60");
@@ -193,4 +175,5 @@ public class WatershedPumpMain {
         }
         return database;
     }
+    */
 }

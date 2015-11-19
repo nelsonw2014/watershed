@@ -26,7 +26,7 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
     ObjectMapper objectMapper;
 
     @Inject
-    JobService service;
+    JobService jobService;
 
     @Inject
     public PumpResource() {
@@ -36,7 +36,10 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
     @Path("/status/{job_id}")
     @GET
     public Response getJob(@PathParam("job_id") String jobId) throws IOException{
-        Job job = service.getJob(jobId);
+        Job job = jobService.getJob(jobId);
+        if(job == null){
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
 
         String response = objectMapper.writeValueAsString(job);
         return Response.ok().entity(response).build();
@@ -45,7 +48,7 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
     @Path("/queue")
     @POST
     public Response queueJob(@Valid PumpSettings pumpSettings) throws IOException{
-        Job job = service.queueJob(pumpSettings);
+        Job job = jobService.queueJob(pumpSettings);
 
         String response = objectMapper.writeValueAsString(job);
         return Response.ok().entity(response).build();
@@ -54,7 +57,7 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
     @Path("/preview")
     @POST
     public Response previewJob(@Valid PreviewSettings previewSettings) throws IOException{
-        JobPreview jobPreview = service.getJobPreview(previewSettings);
+        JobPreview jobPreview = jobService.getJobPreview(previewSettings);
 
         String response = objectMapper.writeValueAsString(jobPreview);
         return Response.ok().entity(response).build();

@@ -60,7 +60,14 @@ dependencies {
     testCompile(
             "org.codehaus.groovy:groovy-all:2.4.4:indy",
             "org.skyscreamer:jsonassert:1.2.3",
+            "io.dropwizard:dropwizard-testing:0.8.3",
+            "org.ow2.asm:asm-all:5.0.3"
     )
+
+    //An error with bundled asm package in cglib - exclude it.
+    testCompile('cglib:cglib:3.1'){
+        exclude module: 'asm'
+    }
 }
 
 tasks.withType(GroovyCompile) {

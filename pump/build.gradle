@@ -34,12 +34,13 @@ repositories {
 }
 
 dependencies {
-    compile("com.amazonaws:amazon-kinesis-producer:0.10.1") {
+    compile('com.amazonaws:amazon-kinesis-producer:0.10.1') {
         exclude module: "slf4j-simple"
     }
+
     compile(
             "org.slf4j:slf4j-api:1.7.6",
-            "com.amazonaws:aws-java-sdk-kinesis:1.9.37",
+            'com.amazonaws:aws-java-sdk-kinesis:1.10.34',
             "com.github.davidmoten:rxjava-jdbc:0.6.2",
             "io.reactivex:rxjava:1.0.14",
             "io.reactivex:rxjava-guava:1.0.2",

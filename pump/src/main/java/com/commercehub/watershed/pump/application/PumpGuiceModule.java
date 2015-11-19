@@ -1,19 +1,29 @@
 package com.commercehub.watershed.pump.application;
 
+import com.amazonaws.auth.AWSCredentialsProviderChain;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
-import com.commercehub.watershed.pump.IsolatedConnectionProvider;
 import com.commercehub.watershed.pump.model.Job;
+import com.commercehub.watershed.pump.processing.IsolatedConnectionProvider;
+import com.commercehub.watershed.pump.processing.JobRunnable;
+import com.commercehub.watershed.pump.processing.Pump;
 import com.commercehub.watershed.pump.respositories.DrillRepository;
 import com.commercehub.watershed.pump.respositories.QueryableRepository;
 import com.commercehub.watershed.pump.service.JobService;
 import com.commercehub.watershed.pump.service.JobServiceImpl;
-import com.fasterxml.jackson.databind.*;
+import com.commercehub.watershed.pump.service.TransformerService;
+import com.commercehub.watershed.pump.service.TransformerServiceImpl;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.github.davidmoten.rx.jdbc.ConnectionProvider;
 import com.github.davidmoten.rx.jdbc.Database;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
@@ -22,7 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.io.InputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,7 +45,6 @@ public class PumpGuiceModule extends AbstractModule {
     private Properties defaultProperties;
     private ObjectMapper objectMapper;
 
-    private Queue<Job> jobQueue = new LinkedList<>();
     private Map<String, Job> jobMap = new HashMap<>();
 
     @Override
@@ -50,12 +61,6 @@ public class PumpGuiceModule extends AbstractModule {
     @Named("applicationProperties")
     private Properties getProperties(){
         return defaultProperties;
-    }
-
-    @Provides
-    @Singleton
-    private Queue<Job> getJobQueue(){
-        return jobQueue;
     }
 
     @Provides

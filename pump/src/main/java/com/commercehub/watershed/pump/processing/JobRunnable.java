@@ -1,79 +1,57 @@
 package com.commercehub.watershed.pump.processing;
 
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.github.davidmoten.rx.jdbc.Database;
-import com.google.common.base.Function;
+import com.commercehub.watershed.pump.model.PumpSettings;
+import com.commercehub.watershed.pump.service.TransformerService;
 import com.google.common.base.Optional;
+import com.google.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
 
-import java.io.ByteArrayOutputStream;
 import java.text.NumberFormat;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
     private static final int RECORDS_PER_CHUNK = 1000;
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
-    private ObjectMapper objectMapper;
 
-    //private Queue<Job> jobQueue;
     private Job job;
-    private KinesisProducerConfiguration kinesisProducerConfiguration;
-    private Database database;
+    private TransformerService transformerService;
+    private Provider<Pump> pumpProvider;
 
-    /*
-    public JobRunnable(Queue<Job> jobQueue, KinesisProducerConfiguration kinesisProducerConfiguration, Database database, ObjectMapper objectMapper){
-        this.jobQueue = jobQueue;
-        this.kinesisProducerConfiguration = kinesisProducerConfiguration;
-        this.database = database;
-        this.objectMapper = objectMapper;
+    public JobRunnable(
+            TransformerService transformerService,
+            Provider<Pump> pumpProvider){
+        this.transformerService = transformerService;
+        this.pumpProvider = pumpProvider;
     }
 
-    public void run(){
-        while(jobQueue.size() > 0) {
-            processJob(getNextJobOnQueue());
-        }
-    }
-    */
-
-    public JobRunnable(Job job, KinesisProducerConfiguration kinesisProducerConfiguration, Database database, ObjectMapper objectMapper){
+    public JobRunnable withJob(Job job){
         this.job = job;
-        this.kinesisProducerConfiguration = kinesisProducerConfiguration;
-        this.database = database;
-        this.objectMapper = objectMapper;
+        return this;
     }
 
     public void run(){
+        if(job == null) return;
+
         processJob(job);
     }
 
-    /*
-    private Job getNextJobOnQueue(){
-        return jobQueue.remove();
-    }
-    */
-
     private void processJob(final Job job){
 
-
         java.security.Security.setProperty("networkaddress.cache.ttl", "60");
-        String stream = job.getPumpSettings().getStreamOut(); //"FluxcapPrototype.AppEvent";
-        String sql = job.getPumpSettings().getQueryIn(); //"SELECT partitionKey, rawData data FROM `commercehub-nonprod-pmogren-collector`.streams.`AppEvent/`";
 
-        final Pump pump = new Pump(database, sql, stream, kinesisProducerConfiguration, Optional.of(addReplayFlags(job)));
+        PumpSettings pumpSettings = job.getPumpSettings();
+        final Pump pump = pumpProvider.get()
+                .with(pumpSettings)
+                .with(Optional.of(transformerService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag())));
+
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
@@ -140,32 +118,4 @@ public class JobRunnable implements Runnable {
 
         job.setPumpSubscription(subscription);
     }
-
-    private Function<byte[], byte[]> addReplayFlags(Job job) {
-        final BooleanNode replayEnabled = job.getPumpSettings().hasReplayFlag()? BooleanNode.TRUE : BooleanNode.FALSE;
-        final BooleanNode overwriteEnabled = job.getPumpSettings().hasOverwriteFlag()? BooleanNode.TRUE : BooleanNode.FALSE;
-
-        return new Function<byte[], byte[]>() {
-            @Override
-            public byte[] apply(byte[] input) {
-                try {
-                    JsonNode tree = objectMapper.readTree(input);
-                    if (JsonNodeType.OBJECT == tree.getNodeType()) {
-                        ObjectNode rootObject = (ObjectNode) tree;
-                        rootObject.set("replay", replayEnabled);
-                        rootObject.set("overwrite", overwriteEnabled);
-                    }
-                    ByteArrayOutputStream output = new ByteArrayOutputStream(input.length + 50);
-                    objectMapper.writeValue(output, tree);
-                    output.close();
-                    return output.toByteArray();
-                } catch (Exception e) {
-                    log.warn("Failed to add replay flags to record, using original record", e);
-                    return input;
-                }
-            }
-        };
-    }
-
-
 }

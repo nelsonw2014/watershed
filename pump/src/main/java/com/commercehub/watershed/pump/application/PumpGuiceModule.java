@@ -52,8 +52,8 @@ public class PumpGuiceModule extends AbstractModule {
         defaultProperties = getDefaultPropertiesFromFile();
         objectMapper = configureObjectMapper();
         bind(JobService.class).to(JobServiceImpl.class);
-        //bind(JobProcessor.class).to(JobProcessorImpl.class);
         bind(QueryableRepository.class).to(DrillRepository.class);
+        bind(TransformerService.class).to(TransformerServiceImpl.class);
     }
 
     @Provides
@@ -101,19 +101,26 @@ public class PumpGuiceModule extends AbstractModule {
         return properties;
     }
 
-    /*
+
     @Provides
-    private JobRunnable jobRunnableProvider(Queue<Job> jobQueue, KinesisProducerConfiguration kinesisProducerConfiguration, Database database){
-        return new JobRunnable(jobQueue, kinesisProducerConfiguration, database, objectMapper);
+    private JobRunnable jobRunnableProvider(TransformerService transformerService, Provider<Pump> pumpProvider){
+        return new JobRunnable(transformerService, pumpProvider);
     }
-    */
+
+    @Provides
+    private Pump pumpProvider(Database database, KinesisProducerConfiguration kinesisProducerConfiguration){
+        return new Pump(database, kinesisProducerConfiguration);
+    }
+
 
     @Provides
     @Singleton
     private KinesisProducerConfiguration configureKinesis() {
         KinesisProducerConfiguration kinesisConfig = new KinesisProducerConfiguration();
+
         kinesisConfig.setAggregationEnabled(false); //TODO enable KPL aggregation after Filter's KCL is upgraded; it should be a big help.
         kinesisConfig.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
+
         kinesisConfig.setRegion(Regions.US_EAST_1.getName());
         kinesisConfig.setRecordTtl(Integer.MAX_VALUE);  //Maybe not the best idea to use MAX_VALUE
         // Pump works more smoothly when shards are not saturated, so 95% is a good maximum rate.
@@ -126,23 +133,36 @@ public class PumpGuiceModule extends AbstractModule {
 
     @Provides
     @Singleton
-    private Database connectDatabase() {
+    private Database connectDatabase() throws InterruptedException {
         String jdbcUrl = "jdbc:drill:drillbit=localhost:31010";
         String jdbcUsername = "admin";
         String jdbcPassword = "admin";
         String driverClass = "org.apache.drill.jdbc.Driver";
-        Database database;
-        try {
-            log.info("Testing database connection.");
-            ConnectionProvider cp = IsolatedConnectionProvider.get(jdbcUrl, jdbcUsername, jdbcPassword, driverClass);
-            cp.get().close();
-            database = Database.from(cp);
-            log.info("Database connectivity verified.");
-        } catch (Exception e) {
-            log.error("Could not establish a preliminary database connection", e);
-            System.exit(2);
-            database = null; //thanks javac.
+
+        Database database = null;
+
+        int i = 0;
+        log.info("Testing database connection...");
+        ConnectionProvider cp = IsolatedConnectionProvider.get(jdbcUrl, jdbcUsername, jdbcPassword, driverClass);
+
+        while(database == null && i < 10) {
+            try {
+                cp.get().close();
+                database = Database.from(cp);
+                log.info("Database connectivity verified.");
+            }
+            catch (Exception e) {
+                log.warn("Could not establish a preliminary database connection, retrying... " + e.getMessage());
+                Thread.sleep(6000);
+                i++;
+            }
         }
+
+        if(database == null){
+            log.error("Could not establish a preliminary database connection.");
+            System.exit(2);
+        }
+
         return database;
     }
 

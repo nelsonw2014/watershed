@@ -8,7 +8,7 @@ import com.amazonaws.services.kinesis.model.StreamDescription;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
-import com.commercehub.watershed.pump.SerializingProducer;
+import com.commercehub.watershed.pump.model.PumpSettings;
 import com.github.davidmoten.rx.jdbc.Database;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -34,16 +34,15 @@ public class Pump {
     //TODO produce metrics
 
     private Database database;
-    private String sql;
-    private String stream;
     private int shardCount;
     private Optional<? extends Function<byte[], byte[]>> recordTransformer;
     private KinesisProducer kinesisProducer;
     private KinesisProducerConfiguration kinesisConfig;
+    private PumpSettings pumpSettings;
 
     /**
      * @param database          Database configuration.
-     * @param sql               SQL to query for stream records. Must produce result columns labeled {@code data}, which
+     * @param sql               SQL to query for stream records. Must produce result columns labeled {@code rawData}, which
      *                          will be retrieved as a byte array, and {@code partitionKey}, which will be retrieved as
      *                          a String.
      *                          Example: {@code SELECT partitionKey, data FROM storage.workspace.table WHERE processDate > '2015-01-01'}
@@ -51,16 +50,21 @@ public class Pump {
      * @param kinesisConfig     Kinesis configuration - AWS region, credential provider, buffering, retry, rate limiting, metrics, etc.
      * @param recordTransformer Optional function to transform a stream record before re-publishing it.
      */
-    public Pump(Database database, String sql, String stream,
-                KinesisProducerConfiguration kinesisConfig,
-                Optional<? extends Function<byte[], byte[]>> recordTransformer) {
+    public Pump(Database database, KinesisProducerConfiguration kinesisConfig) {
         this.database = database;
-        this.sql = sql;
-        this.stream = stream;
-        this.recordTransformer = recordTransformer;
         this.kinesisConfig = kinesisConfig;
         this.kinesisProducer = new KinesisProducer(kinesisConfig);
-        this.shardCount = countShardsInStream(stream, kinesisConfig);
+    }
+
+    public Pump with(PumpSettings pumpSettings){
+        this.pumpSettings = pumpSettings;
+        this.shardCount = countShardsInStream(pumpSettings.getStreamOut(), kinesisConfig);
+        return this;
+    }
+
+    public Pump with(Optional<? extends Function<byte[], byte[]>> recordTransformer){
+        this.recordTransformer = recordTransformer;
+        return this;
     }
 
     private int countShardsInStream(String stream, KinesisProducerConfiguration kinesisConfig) {
@@ -99,7 +103,7 @@ public class Pump {
 
                 final ResultSet resultSet = executeQuery(subscriber, connection);
 
-                JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(subscriber, resultSet, connection);
+                JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(subscriber, resultSet, connection, pumpSettings);
                 subscriber.setProducer(jdbcRecordProducer);
 
                 jdbcRecordProducer.request(shardCount * MAX_RECORDS_PER_SHARD_PER_SECOND * kinesisConfig.getRateLimit() / 200);
@@ -108,8 +112,8 @@ public class Pump {
             private ResultSet executeQuery(Subscriber<?> subscriber, Connection connection) {
                 ResultSet resultSet;
                 try {
-                    log.info("Executing JDBC query {}", sql);
-                    resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(sql);
+                    log.info("Executing JDBC query {}", pumpSettings.getQueryIn());
+                    resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(pumpSettings.getQueryIn());
                     log.info("Got a JDBC ResultSet, streaming results.");
                     resultSet.setFetchSize(Integer.MIN_VALUE);
                 } catch (Exception e) {
@@ -153,7 +157,7 @@ public class Pump {
                     public Observable<UserRecordResult> call(Record record) {
                         log.debug("Adding record to Kinesis Producer");
                         return ListenableFutureObservable.from(
-                                kinesisProducer.addUserRecord(stream, record.getPartitionKey(), record.getData()),
+                                kinesisProducer.addUserRecord(pumpSettings.getStreamOut(), record.getPartitionKey(), record.getData()),
                                 Schedulers.io());
                     }
                 });
@@ -181,11 +185,13 @@ public class Pump {
         private final Subscriber<? super Record> subscriber;
         private final ResultSet resultSet;
         private final Connection connection;
+        private final PumpSettings pumpSettings;
 
-        public JdbcRecordProducer(Subscriber<? super Record> subscriber, ResultSet resultSet, Connection connection) {
+        public JdbcRecordProducer(Subscriber<? super Record> subscriber, ResultSet resultSet, Connection connection, PumpSettings pumpSettings) {
             this.subscriber = subscriber;
             this.resultSet = resultSet;
             this.connection = connection;
+            this.pumpSettings = pumpSettings;
         }
 
         @Override
@@ -198,8 +204,8 @@ public class Pump {
                 } else {
                     if (resultSet.next()) {
                         log.trace("Got a JDBC result record");
-                        subscriber.onNext(new Record().withPartitionKey(resultSet.getString("partitionKey")).
-                                withData(ByteBuffer.wrap(resultSet.getBytes("data"))));
+                        subscriber.onNext(new Record().withPartitionKey(resultSet.getString(pumpSettings.getPartitionKeyColumn())).
+                                withData(ByteBuffer.wrap(resultSet.getBytes(pumpSettings.getRawDataColumn()))));
                     } else {
                         subscriber.onCompleted();
                         keepGoing = false;

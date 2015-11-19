@@ -2,14 +2,15 @@ package com.commercehub.watershed.pump.resources;
 
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.JobPreview;
-import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.model.PreviewSettings;
+import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.JobService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -43,7 +44,7 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
 
     @Path("/queue")
     @POST
-    public Response queueJob(PumpSettings pumpSettings) throws IOException{
+    public Response queueJob(@Valid PumpSettings pumpSettings) throws IOException{
         Job job = service.queueJob(pumpSettings);
 
         String response = objectMapper.writeValueAsString(job);
@@ -52,7 +53,7 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
 
     @Path("/preview")
     @POST
-    public Response previewJob(PreviewSettings previewSettings) throws IOException{
+    public Response previewJob(@Valid PreviewSettings previewSettings) throws IOException{
         JobPreview jobPreview = service.getJobPreview(previewSettings);
 
         String response = objectMapper.writeValueAsString(jobPreview);

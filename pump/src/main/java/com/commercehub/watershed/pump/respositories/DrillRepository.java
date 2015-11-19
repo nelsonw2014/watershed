@@ -8,10 +8,7 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,13 +26,14 @@ public class DrillRepository implements QueryableRepository {
 
         String countSql = "SELECT count(*) as total FROM (" + previewSettings.getQueryIn() + ")";
         Integer count = null;
-        List<Map<String, Object>> rows = null;
+        List<Map<String, String>> rows = null;
         try{
             ResultSet resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(countSql);
             resultSet.setFetchSize(1);
+            resultSet.next();
             count = resultSet.getInt("total");
 
-            resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(countSql);
+            resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(previewSettings.getQueryIn());
             resultSet.setFetchSize(previewSettings.getPreviewCount());
 
             rows = resultSetToArrayList(resultSet, previewSettings.getPreviewCount());
@@ -55,15 +53,20 @@ public class DrillRepository implements QueryableRepository {
         return new JobPreview(count, rows);
     }
 
-    public List<Map<String, Object>> resultSetToArrayList(ResultSet rs, Integer rowLimit) throws SQLException{
-        ResultSetMetaData md = rs.getMetaData();
+    public List<Map<String, String>> resultSetToArrayList(ResultSet resultSet, Integer rowLimit) throws SQLException{
+        ResultSetMetaData md = resultSet.getMetaData();
         int columns = md.getColumnCount();
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<String, String>> list = new ArrayList<>();
 
-        while (rs.next() && rs.getRow() < rowLimit){
-            Map<String, Object> row = new HashMap<>();
+        while (resultSet.next() && resultSet.getRow() < rowLimit){
+            Map<String, String> row = new HashMap<>();
             for(int i = 1; i <= columns; i++){
-                row.put(md.getColumnName(i), rs.getObject(i));
+                if(md.getColumnType(i) == Types.BOOLEAN){
+                    row.put(md.getColumnName(i), String.valueOf(resultSet.getBoolean(i)));
+                    continue;
+                }
+
+                row.put(md.getColumnName(i), new String(resultSet.getBytes(i)));
             }
 
             list.add(row);

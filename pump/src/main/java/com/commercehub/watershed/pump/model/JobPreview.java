@@ -5,9 +5,9 @@ import java.util.Map;
 
 public class JobPreview {
     private Integer count;
-    private List<Map<String, Object>> rows;
+    private List<Map<String, String>> rows;
 
-    public JobPreview(Integer count, List<Map<String, Object>> rows) {
+    public JobPreview(Integer count, List<Map<String, String>> rows) {
         this.count = count;
         this.rows = rows;
     }
@@ -20,11 +20,11 @@ public class JobPreview {
         this.count = count;
     }
 
-    public List<Map<String, Object>> getRows() {
+    public List<Map<String, String>> getRows() {
         return rows;
     }
 
-    public void setRows(List<Map<String, Object>> rows) {
+    public void setRows(List<Map<String, String>> rows) {
         this.rows = rows;
     }
 }

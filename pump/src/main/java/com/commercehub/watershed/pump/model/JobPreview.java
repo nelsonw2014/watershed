@@ -27,4 +27,23 @@ public class JobPreview {
     public void setRows(List<Map<String, String>> rows) {
         this.rows = rows;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        JobPreview that = (JobPreview) o;
+
+        if (!count.equals(that.count)) return false;
+        return rows.equals(that.rows);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = count.hashCode();
+        result = 31 * result + rows.hashCode();
+        return result;
+    }
 }

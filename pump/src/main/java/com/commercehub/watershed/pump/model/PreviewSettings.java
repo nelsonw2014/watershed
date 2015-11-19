@@ -26,4 +26,23 @@ public class PreviewSettings {
     public void setPreviewCount(Integer previewCount) {
         this.previewCount = previewCount;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PreviewSettings that = (PreviewSettings) o;
+
+        if (queryIn != null ? !queryIn.equals(that.queryIn) : that.queryIn != null) return false;
+        return !(previewCount != null ? !previewCount.equals(that.previewCount) : that.previewCount != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = queryIn != null ? queryIn.hashCode() : 0;
+        result = 31 * result + (previewCount != null ? previewCount.hashCode() : 0);
+        return result;
+    }
 }

@@ -87,4 +87,42 @@ public class Job {
     public void setFailureRecordCount(Integer failureRecordCount) {
         this.failureRecordCount = failureRecordCount;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Job job = (Job) o;
+
+        if (!jobId.equals(job.jobId)) return false;
+        if (!pumpSettings.equals(job.pumpSettings)) return false;
+        if (!processingErrors.equals(job.processingErrors)) return false;
+        if (pumpSubscription != null ? !pumpSubscription.equals(job.pumpSubscription) : job.pumpSubscription != null)
+            return false;
+        if (totalRecordCount != null ? !totalRecordCount.equals(job.totalRecordCount) : job.totalRecordCount != null)
+            return false;
+        if (currentRecordCount != null ? !currentRecordCount.equals(job.currentRecordCount) : job.currentRecordCount != null)
+            return false;
+        if (successfulRecordCount != null ? !successfulRecordCount.equals(job.successfulRecordCount) : job.successfulRecordCount != null)
+            return false;
+        if (failureRecordCount != null ? !failureRecordCount.equals(job.failureRecordCount) : job.failureRecordCount != null)
+            return false;
+        return stage == job.stage;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = jobId.hashCode();
+        result = 31 * result + pumpSettings.hashCode();
+        result = 31 * result + processingErrors.hashCode();
+        result = 31 * result + (pumpSubscription != null ? pumpSubscription.hashCode() : 0);
+        result = 31 * result + (totalRecordCount != null ? totalRecordCount.hashCode() : 0);
+        result = 31 * result + (currentRecordCount != null ? currentRecordCount.hashCode() : 0);
+        result = 31 * result + (successfulRecordCount != null ? successfulRecordCount.hashCode() : 0);
+        result = 31 * result + (failureRecordCount != null ? failureRecordCount.hashCode() : 0);
+        result = 31 * result + stage.hashCode();
+        return result;
+    }
 }

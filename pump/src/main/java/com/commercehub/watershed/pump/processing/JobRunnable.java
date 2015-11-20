@@ -7,6 +7,7 @@ import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.TransformerService;
 import com.google.common.base.Optional;
 import com.google.inject.Provider;
+import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -45,8 +46,6 @@ public class JobRunnable implements Runnable {
 
     private void processJob(final Job job){
 
-        java.security.Security.setProperty("networkaddress.cache.ttl", "60");
-
         PumpSettings pumpSettings = job.getPumpSettings();
         final Pump pump = pumpProvider.get()
                 .with(pumpSettings)
@@ -66,7 +65,15 @@ public class JobRunnable implements Runnable {
                     AtomicLong successCount = new AtomicLong();
                     AtomicLong failCount = new AtomicLong();
 
-                    Double startTime;
+                    @Override
+                    public void onStart(){
+                        job.setStage(ProcessingStage.IN_PROGRESS);
+                        job.setStartTime(Instant.now().toDateTime());
+                        job.setSuccessfulRecordCount(0L);
+                        job.setFailureRecordCount(0L);
+
+                        request(RECORDS_PER_CHUNK);
+                    }
 
                     @Override
                     public void onCompleted() {
@@ -75,15 +82,22 @@ public class JobRunnable implements Runnable {
                         stats();
                         pump.destroy();
                         job.setStage(ProcessingStage.COMPLETED_SUCCESS);
+                        job.setCompletionTime(Instant.now().toDateTime());
                     }
 
                     private void stats() {
-                        double endTime = (double) System.currentTimeMillis();
-                        double elapsedTime = (endTime - startTime) / 1000d;
-                        log.info("Emitted {} records successfully, along with {} failures, in {} seconds. Overall mean rate {} rec/s. Roughly {} records are pending.",
-                                NUM_FMT.format(successCount), NUM_FMT.format(failCount), NUM_FMT.format(elapsedTime),
-                                NUM_FMT.format((successCount.get() + failCount.get()) / elapsedTime),
-                                NUM_FMT.format(pump.countPending()));
+                        long pendingRecordCount = pump.countPending();
+
+                        job.setSuccessfulRecordCount(successCount.get());
+                        job.setFailureRecordCount(failCount.get());
+                        job.setPendingRecordCount(pendingRecordCount);
+
+                        log.info("Emitted {} records successfully, along with {} failures, in {}. Overall mean rate {}. Roughly {} records are pending.",
+                                NUM_FMT.format(successCount),
+                                NUM_FMT.format(failCount),
+                                job.getElapsedTimePretty(),
+                                job.getMeanRatePretty(),
+                                NUM_FMT.format(pendingRecordCount));
                     }
 
                     @Override
@@ -92,14 +106,11 @@ public class JobRunnable implements Runnable {
                         pump.destroy();
                         job.addProcessingError(e);
                         job.setStage(ProcessingStage.COMPLETED_ERROR);
+                        job.setCompletionTime(Instant.now().toDateTime());
                     }
 
                     @Override
                     public void onNext(UserRecordResult userRecordResult) {
-                        if (startTime == null) {
-                            startTime = (double) System.currentTimeMillis();
-                            request(RECORDS_PER_CHUNK);
-                        }
                         log.trace("Got a Kinesis result.");
                         if (userRecordResult.isSuccessful()) {
                             successCount.incrementAndGet();

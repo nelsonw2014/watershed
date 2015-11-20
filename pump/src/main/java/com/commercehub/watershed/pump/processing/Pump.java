@@ -99,6 +99,7 @@ public class Pump {
         Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
             @Override
             public void call(final Subscriber<? super Record> subscriber) {
+                subscriber.onStart();
                 final Connection connection = getConnection(subscriber);
 
                 final ResultSet resultSet = executeQuery(subscriber, connection);
@@ -167,6 +168,7 @@ public class Pump {
 
     void destroy() {
         if (kinesisProducer != null) {
+            kinesisProducer.flushSync();
             kinesisProducer.destroy();
             kinesisProducer = null;
         }

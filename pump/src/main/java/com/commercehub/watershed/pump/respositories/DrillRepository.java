@@ -53,7 +53,7 @@ public class DrillRepository implements QueryableRepository {
         return new JobPreview(count, rows);
     }
 
-    public List<Map<String, String>> resultSetToArrayList(ResultSet resultSet, Integer rowLimit) throws SQLException{
+    private List<Map<String, String>> resultSetToArrayList(ResultSet resultSet, Integer rowLimit) throws SQLException{
         ResultSetMetaData md = resultSet.getMetaData();
         int columns = md.getColumnCount();
         List<Map<String, String>> list = new ArrayList<>();

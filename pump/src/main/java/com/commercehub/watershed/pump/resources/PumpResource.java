@@ -15,6 +15,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Collection;
 
 
 @Path("/pump")
@@ -45,13 +46,28 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
         return Response.ok().entity(response).build();
     }
 
+    @Path("/status")
+    @GET
+    public Response getAllJobs() throws IOException{
+        Collection<Job> jobs = jobService.getAllJobs();
+
+        String response = objectMapper.writeValueAsString(jobs);
+        return Response.ok().entity(response).build();
+    }
+
     @Path("/queue")
     @POST
     public Response queueJob(@Valid PumpSettings pumpSettings) throws IOException{
         Job job = jobService.queueJob(pumpSettings);
 
-        String response = objectMapper.writeValueAsString(job);
-        return Response.ok().entity(response).build();
+        try {
+            String response = objectMapper.writeValueAsString(job);
+            return Response.ok().entity(response).build();
+        }catch(Exception ex){
+            log.error(ex.getMessage(), ex);
+        }
+
+        return Response.ok().build();
     }
 
     @Path("/preview")

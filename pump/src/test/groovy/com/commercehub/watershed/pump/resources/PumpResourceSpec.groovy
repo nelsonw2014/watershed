@@ -187,4 +187,26 @@ class PumpResourceSpec extends Specification {
         1 * jobService.getJob(jobId) >> null
         response.statusInfo == Response.Status.NOT_FOUND
     }
+
+
+    /* *************** */
+    /*   GET /status   */
+    /* *************** */
+
+    def "GET /status is successful"(){
+        setup:
+        String jobId = UUID.randomUUID().toString()
+        Job job = new Job(jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
+
+        when:
+        Response response = resources.jerseyTest.client()
+                .target("/pump/status")
+                .request()
+                .get()
+
+        then:
+        1 * jobService.getAllJobs() >> [job]
+        response.status == 200
+        response.readEntity(String.class) == objectMapper.writeValueAsString([job])
+    }
 }

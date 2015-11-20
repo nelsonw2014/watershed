@@ -72,6 +72,18 @@ class JobServiceImplSpec extends Specification {
         job == null
     }
 
+    def "getAllJobs returns jobMap values"(){
+        setup:
+        String jobId = UUID.randomUUID().toString()
+        jobMap.put(jobId, new Job(jobId, pumpSettings))
+
+        when:
+        Collection<Job> jobs = jobService.getAllJobs()
+
+        then:
+        jobs == jobMap.values()
+    }
+
     def "getJobPreview returns jobPreview from repository"(){
         setup:
         JobPreview dummyJobPreview = new JobPreview(200, [["field1": "value1"], ["field2": "value2"], ["field2": "value2"]])

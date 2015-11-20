@@ -5,8 +5,11 @@ import com.commercehub.watershed.pump.model.JobPreview;
 import com.commercehub.watershed.pump.model.PreviewSettings;
 import com.commercehub.watershed.pump.model.PumpSettings;
 
+import java.util.Collection;
+
 public interface JobService {
     Job queueJob(PumpSettings pumpSettings);
     Job getJob(String jobId);
+    Collection<Job> getAllJobs();
     JobPreview getJobPreview(PreviewSettings previewSettings);
 }

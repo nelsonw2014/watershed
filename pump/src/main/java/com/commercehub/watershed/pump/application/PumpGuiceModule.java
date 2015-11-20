@@ -16,6 +16,7 @@ import com.commercehub.watershed.pump.service.JobService;
 import com.commercehub.watershed.pump.service.JobServiceImpl;
 import com.commercehub.watershed.pump.service.TransformerService;
 import com.commercehub.watershed.pump.service.TransformerServiceImpl;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -82,7 +83,7 @@ public class PumpGuiceModule extends AbstractModule {
         objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
         objectMapper.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE, false);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        objectMapper.configure(SerializationFeature.WRITE_BIGDECIMAL_AS_PLAIN, true);
+        objectMapper.configure(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN, true);
 
         return objectMapper;
     }

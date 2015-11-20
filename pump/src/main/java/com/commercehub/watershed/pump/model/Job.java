@@ -1,5 +1,10 @@
 package com.commercehub.watershed.pump.model;
 
+import org.joda.time.DateTime;
+import org.joda.time.Instant;
+import org.joda.time.Period;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 import rx.Subscription;
 
 import java.util.ArrayList;
@@ -11,12 +16,22 @@ public class Job {
     List<Throwable> processingErrors;
     Subscription pumpSubscription;
 
-    Integer totalRecordCount;
-    Integer currentRecordCount;
-    Integer successfulRecordCount;
-    Integer failureRecordCount;
+    Long successfulRecordCount;
+    Long failureRecordCount;
+    Long pendingRecordCount;
+
+    DateTime startTime;
+    DateTime completionTime;
 
     ProcessingStage stage = ProcessingStage.NOT_STARTED;
+
+    PeriodFormatter formatter = new PeriodFormatterBuilder()
+            .appendHours().appendSuffix(" hours, ")
+            .appendMinutes().appendSuffix(" minutes, ")
+            .appendSeconds().appendSuffix(".")
+            .appendMillis3Digit().appendSuffix(" seconds")
+            .printZeroNever()
+            .toFormatter();
 
     public Job(String jobId, PumpSettings pumpSettings){
         this.jobId = jobId;
@@ -56,36 +71,64 @@ public class Job {
         this.pumpSubscription = pumpSubscription;
     }
 
-    public Integer getTotalRecordCount() {
-        return totalRecordCount;
-    }
-
-    public void setTotalRecordCount(Integer totalRecordCount) {
-        this.totalRecordCount = totalRecordCount;
-    }
-
-    public Integer getCurrentRecordCount() {
-        return currentRecordCount;
-    }
-
-    public void setCurrentRecordCount(Integer currentRecordCount) {
-        this.currentRecordCount = currentRecordCount;
-    }
-
-    public Integer getSuccessfulRecordCount() {
+    public Long getSuccessfulRecordCount() {
         return successfulRecordCount;
     }
 
-    public void setSuccessfulRecordCount(Integer successfulRecordCount) {
+    public void setSuccessfulRecordCount(Long successfulRecordCount) {
         this.successfulRecordCount = successfulRecordCount;
     }
 
-    public Integer getFailureRecordCount() {
+    public Long getFailureRecordCount() {
         return failureRecordCount;
     }
 
-    public void setFailureRecordCount(Integer failureRecordCount) {
+    public void setFailureRecordCount(Long failureRecordCount) {
         this.failureRecordCount = failureRecordCount;
+    }
+
+    public DateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(DateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public DateTime getCompletionTime() {
+        return completionTime;
+    }
+
+    public void setCompletionTime(DateTime completionTime) {
+        this.completionTime = completionTime;
+    }
+
+    public Long getElapsedTime() {
+        if(completionTime == null){
+            return startTime != null? System.currentTimeMillis() - startTime.getMillis() : 0L;
+        }
+
+        return completionTime.getMillis() - startTime.getMillis();
+    }
+
+    public String getElapsedTimePretty() {
+        return formatter.print(new Period(getElapsedTime() > 0? getElapsedTime().longValue() : 0L));
+    }
+
+    public Long getPendingRecordCount() {
+        return pendingRecordCount;
+    }
+
+    public void setPendingRecordCount(Long pendingRecordCount) {
+        this.pendingRecordCount = pendingRecordCount;
+    }
+
+    public Double getMeanRate() {
+        return getElapsedTime() > 0? (successfulRecordCount + failureRecordCount) / (getElapsedTime() / 1000d) : null;
+    }
+
+    public String getMeanRatePretty() {
+        return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "∞ rec/s";
     }
 
     @Override
@@ -97,17 +140,11 @@ public class Job {
 
         if (!jobId.equals(job.jobId)) return false;
         if (!pumpSettings.equals(job.pumpSettings)) return false;
-        if (!processingErrors.equals(job.processingErrors)) return false;
+        if (processingErrors != null ? !processingErrors.equals(job.processingErrors) : job.processingErrors != null)
+            return false;
         if (pumpSubscription != null ? !pumpSubscription.equals(job.pumpSubscription) : job.pumpSubscription != null)
             return false;
-        if (totalRecordCount != null ? !totalRecordCount.equals(job.totalRecordCount) : job.totalRecordCount != null)
-            return false;
-        if (currentRecordCount != null ? !currentRecordCount.equals(job.currentRecordCount) : job.currentRecordCount != null)
-            return false;
-        if (successfulRecordCount != null ? !successfulRecordCount.equals(job.successfulRecordCount) : job.successfulRecordCount != null)
-            return false;
-        if (failureRecordCount != null ? !failureRecordCount.equals(job.failureRecordCount) : job.failureRecordCount != null)
-            return false;
+
         return stage == job.stage;
 
     }
@@ -116,12 +153,8 @@ public class Job {
     public int hashCode() {
         int result = jobId.hashCode();
         result = 31 * result + pumpSettings.hashCode();
-        result = 31 * result + processingErrors.hashCode();
+        result = 31 * result + (processingErrors != null ? processingErrors.hashCode() : 0);
         result = 31 * result + (pumpSubscription != null ? pumpSubscription.hashCode() : 0);
-        result = 31 * result + (totalRecordCount != null ? totalRecordCount.hashCode() : 0);
-        result = 31 * result + (currentRecordCount != null ? currentRecordCount.hashCode() : 0);
-        result = 31 * result + (successfulRecordCount != null ? successfulRecordCount.hashCode() : 0);
-        result = 31 * result + (failureRecordCount != null ? failureRecordCount.hashCode() : 0);
         result = 31 * result + stage.hashCode();
         return result;
     }

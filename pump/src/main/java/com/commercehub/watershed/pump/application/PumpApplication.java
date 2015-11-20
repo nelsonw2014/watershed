@@ -32,6 +32,8 @@ public class PumpApplication extends Application<PumpConfiguration> {
 
     @Override
     public void run(PumpConfiguration configuration, Environment environment) throws Exception {
+        java.security.Security.setProperty("networkaddress.cache.ttl", "60");
+
         GuiceBridge.setOverrideInjector(guiceBundle.getInjector());
         if (environment.jersey().getResourceConfig().getEndpointsInfo().contains("NONE")) {
             log.info("No resources registered, disabling jersey.");

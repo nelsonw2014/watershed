@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    compile('com.amazonaws:amazon-kinesis-producer:0.10.1') {
+    compile('com.amazonaws:amazon-kinesis-producer:0.10.2') {
         exclude module: "slf4j-simple"
     }
 

@@ -37,13 +37,14 @@ class JobServiceImplSpec extends Specification {
                 repository: repository)
     }
 
-    def "queueJob queues a job with the executor and adds it to the map"(){
+    def "enqueueJob queues a job with the executor and adds it to the map"(){
         when:
-        Job job = jobService.queueJob(pumpSettings)
+        Job job = jobService.enqueueJob(pumpSettings)
 
         then:
         1 * jobRunnableProvider.get() >> jobRunnable
         1 * jobRunnable.withJob(_ as Job) >> jobRunnable
+        1 * executor.submit(_ as JobRunnable)
         jobMap.size() == 1
         jobMap.get(job.jobId) == job
         job.pumpSettings == pumpSettings

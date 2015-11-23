@@ -14,7 +14,6 @@ import org.junit.Rule
 import spock.lang.Shared
 import spock.lang.Specification
 
-import javax.validation.ConstraintViolationException
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
@@ -56,7 +55,7 @@ class PumpResourceSpec extends Specification {
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/preview")
+                .target("/jobs/preview")
                 .request()
                 .post(Entity.entity(previewSettingsJSON, MediaType.APPLICATION_JSON))
 
@@ -72,7 +71,7 @@ class PumpResourceSpec extends Specification {
 
         when:
         resources.jerseyTest.client()
-                .target("/pump/preview")
+                .target("/jobs/preview")
                 .request()
                 .post(Entity.entity(previewSettingsJSON, MediaType.APPLICATION_JSON))
 
@@ -88,7 +87,7 @@ class PumpResourceSpec extends Specification {
 
         when:
         resources.jerseyTest.client()
-                .target("/pump/preview")
+                .target("/jobs/preview")
                 .request()
                 .post(Entity.entity(previewSettingsJSON, MediaType.APPLICATION_JSON))
 
@@ -99,33 +98,33 @@ class PumpResourceSpec extends Specification {
 
 
     /* *************** */
-    /*   POST /queue   */
+    /*   POST /jobs    */
     /* *************** */
 
-    def "POST /queue is successful"(){
+    def "POST /jobs is successful"(){
         setup:
         PumpSettings pumpSettings = new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream")
         String pumpSettingsJSON = objectMapper.writeValueAsString(pumpSettings)
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/queue")
+                .target("/jobs")
                 .request()
                 .post(Entity.entity(pumpSettingsJSON, MediaType.APPLICATION_JSON))
 
         then:
-        1 * jobService.queueJob(pumpSettings) >> new Job(UUID.randomUUID().toString(), pumpSettings)
+        1 * jobService.enqueueJob(pumpSettings) >> new Job(UUID.randomUUID().toString(), pumpSettings)
         response.status == 200
     }
 
-    def "POST /queue fails validation for queryIn"(){
+    def "POST /jobs fails validation for queryIn"(){
         setup:
         PumpSettings pumpSettings = new PumpSettings(queryIn: null, streamOut: "MyStream")
         String pumpSettingsJSON = objectMapper.writeValueAsString(pumpSettings)
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/queue")
+                .target("/jobs")
                 .request()
                 .post(Entity.entity(pumpSettingsJSON, MediaType.APPLICATION_JSON))
 
@@ -134,14 +133,14 @@ class PumpResourceSpec extends Specification {
         0 * jobService.queueJob(_)
     }
 
-    def "POST /queue fails validation for streamOut"(){
+    def "POST /jobs fails validation for streamOut"(){
         setup:
         PumpSettings pumpSettings = new PumpSettings(queryIn: "select * from foo", streamOut: null)
         String pumpSettingsJSON = objectMapper.writeValueAsString(pumpSettings)
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/queue")
+                .target("/jobs")
                 .request()
                 .post(Entity.entity(pumpSettingsJSON, MediaType.APPLICATION_JSON))
 
@@ -151,17 +150,17 @@ class PumpResourceSpec extends Specification {
     }
 
     /* ************************ */
-    /*   GET /status/{job_id}   */
+    /*   GET /jobs/{job_id}     */
     /* ************************ */
 
-    def "GET /status/{job_id} is successful"(){
+    def "GET /jobs/{job_id} is successful"(){
         setup:
         String jobId = UUID.randomUUID().toString()
         Job job = new Job(jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/status")
+                .target("/jobs")
                 .path(jobId)
                 .request()
                 .get()
@@ -172,13 +171,13 @@ class PumpResourceSpec extends Specification {
         response.readEntity(String.class) == objectMapper.writeValueAsString(job)
     }
 
-    def "GET /status/{job_id} returns null of not found"(){
+    def "GET /jobs/{job_id} returns null of not found"(){
         setup:
         String jobId = UUID.randomUUID().toString()
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/status")
+                .target("/jobs")
                 .path(jobId)
                 .request()
                 .get()
@@ -190,17 +189,17 @@ class PumpResourceSpec extends Specification {
 
 
     /* *************** */
-    /*   GET /status   */
+    /*   GET /jobs     */
     /* *************** */
 
-    def "GET /status is successful"(){
+    def "GET /jobs is successful"(){
         setup:
         String jobId = UUID.randomUUID().toString()
         Job job = new Job(jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
 
         when:
         Response response = resources.jerseyTest.client()
-                .target("/pump/status")
+                .target("/jobs")
                 .request()
                 .get()
 

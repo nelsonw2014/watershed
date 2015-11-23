@@ -26,11 +26,10 @@ public class Job {
     private ProcessingStage stage = ProcessingStage.NOT_STARTED;
 
     private PeriodFormatter formatter = new PeriodFormatterBuilder()
-            .appendHours().appendSuffix(" hours, ")
-            .appendMinutes().appendSuffix(" minutes, ")
-            .appendSeconds().appendSuffix(".")
-            .appendMillis3Digit().appendSuffix(" seconds")
-            .printZeroNever()
+            .printZeroNever().appendHours().appendSuffix(" hour, ", " hours, ")
+            .printZeroNever().appendMinutes().appendSuffix(" minute, ", " minutes, ")
+            .printZeroAlways().appendSeconds().appendSuffix(".")
+            .printZeroAlways().appendMillis3Digit().appendSuffix(" seconds")
             .toFormatter();
 
     public Job(String jobId, PumpSettings pumpSettings){

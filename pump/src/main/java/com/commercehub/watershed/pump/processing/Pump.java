@@ -29,7 +29,6 @@ import java.sql.ResultSet;
  */
 public class Pump {
     private static final Logger log = LoggerFactory.getLogger(Pump.class);
-    public static final int MAX_RECORDS_PER_SHARD_PER_SECOND = 1000; //Kinesis service limit, at least prior to aggregation
 
     //TODO produce metrics
 
@@ -39,6 +38,7 @@ public class Pump {
     private KinesisProducer kinesisProducer;
     private KinesisProducerConfiguration kinesisConfig;
     private PumpSettings pumpSettings;
+    private int maxRecordsPerShardPerSecond; //Kinesis service limit, at least prior to aggregation
 
     /**
      * @param database          Database configuration.
@@ -50,10 +50,11 @@ public class Pump {
      * @param kinesisConfig     Kinesis configuration - AWS region, credential provider, buffering, retry, rate limiting, metrics, etc.
      * @param recordTransformer Optional function to transform a stream record before re-publishing it.
      */
-    public Pump(Database database, KinesisProducerConfiguration kinesisConfig) {
+    public Pump(Database database, KinesisProducerConfiguration kinesisConfig, int maxRecordsPerShardPerSecond) {
         this.database = database;
         this.kinesisConfig = kinesisConfig;
         this.kinesisProducer = new KinesisProducer(kinesisConfig);
+        this.maxRecordsPerShardPerSecond = maxRecordsPerShardPerSecond;
     }
 
     public Pump with(PumpSettings pumpSettings){
@@ -107,7 +108,7 @@ public class Pump {
                 JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(subscriber, resultSet, connection, pumpSettings);
                 subscriber.setProducer(jdbcRecordProducer);
 
-                jdbcRecordProducer.request(shardCount * MAX_RECORDS_PER_SHARD_PER_SECOND * kinesisConfig.getRateLimit() / 200);
+                jdbcRecordProducer.request(shardCount * maxRecordsPerShardPerSecond * kinesisConfig.getRateLimit() / 200);
             }
 
             private ResultSet executeQuery(Subscriber<?> subscriber, Connection connection) {
@@ -168,7 +169,6 @@ public class Pump {
 
     void destroy() {
         if (kinesisProducer != null) {
-            kinesisProducer.flushSync();
             kinesisProducer.destroy();
             kinesisProducer = null;
         }

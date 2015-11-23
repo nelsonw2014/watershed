@@ -104,26 +104,27 @@ public class PumpGuiceModule extends AbstractModule {
 
 
     @Provides
-    private JobRunnable jobRunnableProvider(TransformerService transformerService, Provider<Pump> pumpProvider){
-        return new JobRunnable(transformerService, pumpProvider);
+    private JobRunnable jobRunnableProvider(TransformerService transformerService, Provider<Pump> pumpProvider, @Named("numRecordsPerChunk") int numRecordsPerChunk){
+        return new JobRunnable(transformerService, pumpProvider, numRecordsPerChunk);
     }
 
     @Provides
-    private Pump pumpProvider(Database database, KinesisProducerConfiguration kinesisProducerConfiguration){
-        return new Pump(database, kinesisProducerConfiguration);
+    private Pump pumpProvider(Database database, KinesisProducerConfiguration kinesisProducerConfiguration, @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond){
+        return new Pump(database, kinesisProducerConfiguration, maxRecordsPerShardPerSecond);
     }
 
 
     @Provides
     @Singleton
-    private KinesisProducerConfiguration configureKinesis() {
+    private KinesisProducerConfiguration configureKinesis(@Named("applicationProperties") Properties properties) {
         KinesisProducerConfiguration kinesisConfig = new KinesisProducerConfiguration();
 
-        kinesisConfig.setAggregationEnabled(false); //TODO enable KPL aggregation after Filter's KCL is upgraded; it should be a big help.
+        kinesisConfig.setAggregationEnabled((boolean) properties.get("kinesisAggregationEnabled"));
         kinesisConfig.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
 
-        kinesisConfig.setRegion(Regions.US_EAST_1.getName());
-        kinesisConfig.setRecordTtl(Integer.MAX_VALUE);  //Maybe not the best idea to use MAX_VALUE
+        kinesisConfig.setRegion(properties.get("kinesisRegion").toString());
+        kinesisConfig.setRecordTtl((long) properties.get("kinesisRecordTtl"));  //Maybe not the best idea to use MAX_VALUE
+
         // Pump works more smoothly when shards are not saturated, so 95% is a good maximum rate.
         // May be lowered further to share capacity with running applications.
         kinesisConfig.setRateLimit(50);

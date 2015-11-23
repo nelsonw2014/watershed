@@ -19,18 +19,19 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
-    private static final int RECORDS_PER_CHUNK = 1000;
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
 
     private Job job;
     private TransformerService transformerService;
     private Provider<Pump> pumpProvider;
+    private int numRecordsPerChunk;
 
     public JobRunnable(
             TransformerService transformerService,
-            Provider<Pump> pumpProvider){
+            Provider<Pump> pumpProvider, int numRecordsPerChunk){
         this.transformerService = transformerService;
         this.pumpProvider = pumpProvider;
+        this.numRecordsPerChunk = numRecordsPerChunk;
     }
 
     public JobRunnable withJob(Job job){
@@ -72,7 +73,7 @@ public class JobRunnable implements Runnable {
                         job.setSuccessfulRecordCount(0L);
                         job.setFailureRecordCount(0L);
 
-                        request(RECORDS_PER_CHUNK);
+                        request(numRecordsPerChunk);
                     }
 
                     @Override
@@ -118,11 +119,11 @@ public class JobRunnable implements Runnable {
                             failCount.incrementAndGet();
                         }
                         long total = successCount.get() + failCount.get();
-                        if (total == 1 || total % RECORDS_PER_CHUNK == 0) {
+                        if (total == 1 || total % numRecordsPerChunk == 0) {
                             stats();
                         }
-                        if (total % RECORDS_PER_CHUNK == 0) {
-                            request(RECORDS_PER_CHUNK);
+                        if (total % numRecordsPerChunk == 0) {
+                            request(numRecordsPerChunk);
                         }
                     }
                 });

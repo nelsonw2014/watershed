@@ -11,21 +11,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Job {
-    String jobId;
-    PumpSettings pumpSettings;
-    List<Throwable> processingErrors;
-    Subscription pumpSubscription;
+    private String jobId;
+    private PumpSettings pumpSettings;
+    private List<Throwable> processingErrors;
+    private Subscription pumpSubscription;
 
-    Long successfulRecordCount;
-    Long failureRecordCount;
-    Long pendingRecordCount;
+    private Long successfulRecordCount;
+    private Long failureRecordCount;
+    private Long pendingRecordCount;
 
-    DateTime startTime;
-    DateTime completionTime;
+    private DateTime startTime;
+    private DateTime completionTime;
 
-    ProcessingStage stage = ProcessingStage.NOT_STARTED;
+    private ProcessingStage stage = ProcessingStage.NOT_STARTED;
 
-    PeriodFormatter formatter = new PeriodFormatterBuilder()
+    private PeriodFormatter formatter = new PeriodFormatterBuilder()
             .appendHours().appendSuffix(" hours, ")
             .appendMinutes().appendSuffix(" minutes, ")
             .appendSeconds().appendSuffix(".")

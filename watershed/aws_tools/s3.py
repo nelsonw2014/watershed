@@ -49,6 +49,10 @@ def upload_pump(s3_config=None, profile="default", force_upload=False):
         pump_root = os.path.dirname(os.path.abspath(__file__)).replace('/watershed/aws_tools', '/pump')
         
         for dirpath, dirs, files in os.walk(pump_root):
+            if "build" in dirpath:
+                print("Skipping build directory: {0}".format(dirpath))
+                continue
+                
             for file in files:
                 s3_file_path = s3_config['resourcesPrefix'] + dirpath.replace(pump_root, "/pump") + "/" + file
                 s3_resource.Object(s3_config['resourcesBucket'], s3_file_path).put(Body=open(dirpath + "/" + file, 'rb'))

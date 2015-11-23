@@ -31,7 +31,8 @@ def forward_necessary_ports(cluster_id=None, private_key_path=None, profile='def
         'namenode_port': 9101,
         'zookeeper_port': 2181,
         'drill_user_port': 31010,
-        'hive_port': 10000
+        'hive_port': 10000,
+        'pump_port': 8080
     }
 
     port_forwarders = []

@@ -29,7 +29,7 @@ public class JobServiceImpl implements JobService {
     private QueryableRepository repository;
 
     @Override
-    public Job queueJob(PumpSettings pumpSettings) {
+    public Job enqueueJob(PumpSettings pumpSettings) {
         Job job = new Job(UUID.randomUUID().toString(), pumpSettings);
         jobMap.put(job.getJobId(), job);
 

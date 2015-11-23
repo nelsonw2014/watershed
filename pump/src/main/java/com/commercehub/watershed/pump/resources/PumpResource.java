@@ -18,23 +18,17 @@ import java.io.IOException;
 import java.util.Collection;
 
 
-@Path("/pump")
+@Path("/jobs")
 @Produces(MediaType.APPLICATION_JSON)
 public class PumpResource {
-final Logger log = LoggerFactory.getLogger(PumpResource.class);
 
     @Inject
-    ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     @Inject
-    JobService jobService;
+    private JobService jobService;
 
-    @Inject
-    public PumpResource() {
-        log.info("Creating a new PumpResource.");
-    }
-
-    @Path("/status/{job_id}")
+    @Path("/{job_id}")
     @GET
     public Response getJob(@PathParam("job_id") String jobId) throws IOException{
         Job job = jobService.getJob(jobId);
@@ -46,7 +40,6 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
         return Response.ok().entity(response).build();
     }
 
-    @Path("/status")
     @GET
     public Response getAllJobs() throws IOException{
         Collection<Job> jobs = jobService.getAllJobs();
@@ -55,19 +48,12 @@ final Logger log = LoggerFactory.getLogger(PumpResource.class);
         return Response.ok().entity(response).build();
     }
 
-    @Path("/queue")
     @POST
-    public Response queueJob(@Valid PumpSettings pumpSettings) throws IOException{
-        Job job = jobService.queueJob(pumpSettings);
+    public Response enqueueJob(@Valid PumpSettings pumpSettings) throws IOException{
+        Job job = jobService.enqueueJob(pumpSettings);
 
-        try {
-            String response = objectMapper.writeValueAsString(job);
-            return Response.ok().entity(response).build();
-        }catch(Exception ex){
-            log.error(ex.getMessage(), ex);
-        }
-
-        return Response.ok().build();
+        String response = objectMapper.writeValueAsString(job);
+        return Response.ok().entity(response).build();
     }
 
     @Path("/preview")

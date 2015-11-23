@@ -16,7 +16,7 @@ public class TransformerServiceImpl implements TransformerService {
     private static final Logger log = LoggerFactory.getLogger(TransformerServiceImpl.class);
 
     @Inject
-    ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
 
     public Function<byte[], byte[]> addReplayFlags(Boolean replayEnabled, Boolean overwriteEnabled) {

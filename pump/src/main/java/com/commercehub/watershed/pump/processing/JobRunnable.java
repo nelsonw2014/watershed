@@ -24,14 +24,17 @@ public class JobRunnable implements Runnable {
     private Job job;
     private TransformerService transformerService;
     private Provider<Pump> pumpProvider;
+    private Provider<PumpSubscriber> pumpSubscriberProvider;
     private int numRecordsPerChunk;
 
     public JobRunnable(
             TransformerService transformerService,
-            Provider<Pump> pumpProvider, int numRecordsPerChunk){
+            Provider<Pump> pumpProvider,
+            Provider<PumpSubscriber> pumpSubscriberProvider){
+
         this.transformerService = transformerService;
         this.pumpProvider = pumpProvider;
-        this.numRecordsPerChunk = numRecordsPerChunk;
+        this.pumpSubscriberProvider = pumpSubscriberProvider;
     }
 
     public JobRunnable withJob(Job job){
@@ -44,6 +47,7 @@ public class JobRunnable implements Runnable {
 
         processJob(job);
     }
+
 
     private void processJob(final Job job){
 
@@ -61,73 +65,7 @@ public class JobRunnable implements Runnable {
         }, "KPL shutdown hook"));
 
         Observable<UserRecordResult> results = pump.build();
-        Subscription subscription = results.subscribe(
-                new Subscriber<UserRecordResult>() {
-                    AtomicLong successCount = new AtomicLong();
-                    AtomicLong failCount = new AtomicLong();
-
-                    @Override
-                    public void onStart(){
-                        job.setStage(ProcessingStage.IN_PROGRESS);
-                        job.setStartTime(Instant.now().toDateTime());
-                        job.setSuccessfulRecordCount(0L);
-                        job.setFailureRecordCount(0L);
-
-                        request(numRecordsPerChunk);
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        pump.flushSync();
-                        log.info("Completed (job: {})", job.getJobId());
-                        stats();
-                        pump.destroy();
-                        job.setStage(ProcessingStage.COMPLETED_SUCCESS);
-                        job.setCompletionTime(Instant.now().toDateTime());
-                    }
-
-                    private void stats() {
-                        long pendingRecordCount = pump.countPending();
-
-                        job.setSuccessfulRecordCount(successCount.get());
-                        job.setFailureRecordCount(failCount.get());
-                        job.setPendingRecordCount(pendingRecordCount);
-
-                        log.info("Emitted {} records successfully, along with {} failures, in {}. Overall mean rate {}. Roughly {} records are pending.",
-                                NUM_FMT.format(successCount),
-                                NUM_FMT.format(failCount),
-                                job.getElapsedTimePretty(),
-                                job.getMeanRatePretty(),
-                                NUM_FMT.format(pendingRecordCount));
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        log.error("General failure, aborting.", e);
-                        pump.destroy();
-                        job.addProcessingError(e);
-                        job.setStage(ProcessingStage.COMPLETED_ERROR);
-                        job.setCompletionTime(Instant.now().toDateTime());
-                    }
-
-                    @Override
-                    public void onNext(UserRecordResult userRecordResult) {
-                        log.trace("Got a Kinesis result.");
-                        if (userRecordResult.isSuccessful()) {
-                            successCount.incrementAndGet();
-                        } else {
-                            failCount.incrementAndGet();
-                        }
-                        long total = successCount.get() + failCount.get();
-                        if (total == 1 || total % numRecordsPerChunk == 0) {
-                            stats();
-                        }
-                        if (total % numRecordsPerChunk == 0) {
-                            request(numRecordsPerChunk);
-                        }
-                    }
-                });
-
+        Subscription subscription = results.subscribe(pumpSubscriberProvider.get().with(job, pump));
         job.setPumpSubscription(subscription);
     }
 }

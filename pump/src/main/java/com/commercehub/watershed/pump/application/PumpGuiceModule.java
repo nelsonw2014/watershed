@@ -10,6 +10,7 @@ import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.processing.IsolatedConnectionProvider;
 import com.commercehub.watershed.pump.processing.JobRunnable;
 import com.commercehub.watershed.pump.processing.Pump;
+import com.commercehub.watershed.pump.processing.PumpSubscriber;
 import com.commercehub.watershed.pump.respositories.DrillRepository;
 import com.commercehub.watershed.pump.respositories.QueryableRepository;
 import com.commercehub.watershed.pump.service.JobService;
@@ -105,8 +106,8 @@ public class PumpGuiceModule extends AbstractModule {
 
 
     @Provides
-    private JobRunnable jobRunnableProvider(TransformerService transformerService, Provider<Pump> pumpProvider, @Named("numRecordsPerChunk") int numRecordsPerChunk){
-        return new JobRunnable(transformerService, pumpProvider, numRecordsPerChunk);
+    private JobRunnable jobRunnableProvider(TransformerService transformerService, Provider<Pump> pumpProvider, Provider<PumpSubscriber> pumpSubscriber){
+        return new JobRunnable(transformerService, pumpProvider, pumpSubscriber);
     }
 
     @Provides
@@ -114,6 +115,10 @@ public class PumpGuiceModule extends AbstractModule {
         return new Pump(database, kinesisProducerConfiguration, maxRecordsPerShardPerSecond);
     }
 
+    @Provides
+    private PumpSubscriber pumpSubscriberProvider(@Named("numRecordsPerChunk") int numRecordsPerChunk){
+        return new PumpSubscriber(numRecordsPerChunk);
+    }
 
     @Provides
     @Singleton

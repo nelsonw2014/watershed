@@ -7,16 +7,19 @@ plugins {
     id "idea"
     id "eclipse"
     id "maven"
+    id 'application'
 }
 
 project.ext {
-    mainClassName = "com.commercehub.watershed.pump.WatershedPumpMain"
     drillVersion = "1.1.0"
+    dropwizardVersion = '0.8.3'
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = "2.6"
 }
+
+mainClassName = "com.commercehub.watershed.pump.application.PumpApplication"
 
 group "com.commercehub"
 version = "0.1.0"
@@ -27,21 +30,24 @@ targetCompatibility = "1.7"
 
 
 repositories {
-    flatDir name: "ExternalJars", dirs: "tempjars"
     jcenter()
 }
 
 dependencies {
-    compile("com.amazonaws:amazon-kinesis-producer:0.10.1") {
+    compile('com.amazonaws:amazon-kinesis-producer:0.10.2') {
         exclude module: "slf4j-simple"
     }
+
     compile(
             "org.slf4j:slf4j-api:1.7.6",
-            "com.amazonaws:aws-java-sdk-kinesis:1.9.37",
+            'com.amazonaws:aws-java-sdk-kinesis:1.10.34',
             "com.github.davidmoten:rxjava-jdbc:0.6.2",
             "io.reactivex:rxjava:1.0.14",
             "io.reactivex:rxjava-guava:1.0.2",
             "com.fasterxml.jackson.core:jackson-databind:2.3.2",
+            "com.google.inject:guice:4.0",
+            "com.hubspot.dropwizard:dropwizard-guice:0.8.3.0",
+            "io.dropwizard:dropwizard-core:${dropwizardVersion}"
     )
 
     runtime(
@@ -54,7 +60,14 @@ dependencies {
     testCompile(
             "org.codehaus.groovy:groovy-all:2.4.4:indy",
             "org.skyscreamer:jsonassert:1.2.3",
+            "io.dropwizard:dropwizard-testing:0.8.3",
+            "org.ow2.asm:asm-all:5.0.3"
     )
+
+    //An error with bundled asm package in cglib - exclude it.
+    testCompile('cglib:cglib:3.1'){
+        exclude module: 'asm'
+    }
 }
 
 tasks.withType(GroovyCompile) {

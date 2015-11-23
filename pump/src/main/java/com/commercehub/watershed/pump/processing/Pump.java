@@ -1,4 +1,4 @@
-package com.commercehub.watershed.pump;
+package com.commercehub.watershed.pump.processing;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
@@ -8,6 +8,7 @@ import com.amazonaws.services.kinesis.model.StreamDescription;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.commercehub.watershed.pump.model.PumpSettings;
 import com.github.davidmoten.rx.jdbc.Database;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -28,21 +29,20 @@ import java.sql.ResultSet;
  */
 public class Pump {
     private static final Logger log = LoggerFactory.getLogger(Pump.class);
-    public static final int MAX_RECORDS_PER_SHARD_PER_SECOND = 1000; //Kinesis service limit, at least prior to aggregation
 
     //TODO produce metrics
 
     private Database database;
-    private String sql;
-    private String stream;
     private int shardCount;
     private Optional<? extends Function<byte[], byte[]>> recordTransformer;
     private KinesisProducer kinesisProducer;
     private KinesisProducerConfiguration kinesisConfig;
+    private PumpSettings pumpSettings;
+    private int maxRecordsPerShardPerSecond; //Kinesis service limit, at least prior to aggregation
 
     /**
      * @param database          Database configuration.
-     * @param sql               SQL to query for stream records. Must produce result columns labeled {@code data}, which
+     * @param sql               SQL to query for stream records. Must produce result columns labeled {@code rawData}, which
      *                          will be retrieved as a byte array, and {@code partitionKey}, which will be retrieved as
      *                          a String.
      *                          Example: {@code SELECT partitionKey, data FROM storage.workspace.table WHERE processDate > '2015-01-01'}
@@ -50,16 +50,22 @@ public class Pump {
      * @param kinesisConfig     Kinesis configuration - AWS region, credential provider, buffering, retry, rate limiting, metrics, etc.
      * @param recordTransformer Optional function to transform a stream record before re-publishing it.
      */
-    public Pump(Database database, String sql, String stream,
-                KinesisProducerConfiguration kinesisConfig,
-                Optional<? extends Function<byte[], byte[]>> recordTransformer) {
+    public Pump(Database database, KinesisProducerConfiguration kinesisConfig, int maxRecordsPerShardPerSecond) {
         this.database = database;
-        this.sql = sql;
-        this.stream = stream;
-        this.recordTransformer = recordTransformer;
         this.kinesisConfig = kinesisConfig;
         this.kinesisProducer = new KinesisProducer(kinesisConfig);
-        this.shardCount = countShardsInStream(stream, kinesisConfig);
+        this.maxRecordsPerShardPerSecond = maxRecordsPerShardPerSecond;
+    }
+
+    public Pump with(PumpSettings pumpSettings){
+        this.pumpSettings = pumpSettings;
+        this.shardCount = countShardsInStream(pumpSettings.getStreamOut(), kinesisConfig);
+        return this;
+    }
+
+    public Pump with(Optional<? extends Function<byte[], byte[]>> recordTransformer){
+        this.recordTransformer = recordTransformer;
+        return this;
     }
 
     private int countShardsInStream(String stream, KinesisProducerConfiguration kinesisConfig) {
@@ -86,39 +92,43 @@ public class Pump {
         // Also not sure whether rxjava-jdbc supports backpressure.
 //        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
 //            @Override
-//            public Record call(ResultSet rs) throws SQLException {
-//                return new Record().withPartitionKey(rs.getString("partitionKey")).
-//                        withData(ByteBuffer.wrap(rs.getBytes("data")));
+//            public Record call(ResultSet resultSet) throws SQLException {
+//                return new Record().withPartitionKey(resultSet.getString("partitionKey")).
+//                        withData(ByteBuffer.wrap(resultSet.getBytes("data")));
 //            }
 //        });
         Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
             @Override
-            public void call(final Subscriber<? super Record> s) {
-                final Connection c = getConnection(s);
-                final ResultSet rs = executeQuery(s, c);
-                JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(s, rs, c);
-                s.setProducer(jdbcRecordProducer);
-                jdbcRecordProducer.request(shardCount * MAX_RECORDS_PER_SHARD_PER_SECOND * kinesisConfig.getRateLimit() / 200);
+            public void call(final Subscriber<? super Record> subscriber) {
+                subscriber.onStart();
+                final Connection connection = getConnection(subscriber);
+
+                final ResultSet resultSet = executeQuery(subscriber, connection);
+
+                JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(subscriber, resultSet, connection, pumpSettings);
+                subscriber.setProducer(jdbcRecordProducer);
+
+                jdbcRecordProducer.request(shardCount * maxRecordsPerShardPerSecond * kinesisConfig.getRateLimit() / 200);
             }
 
-            private ResultSet executeQuery(Subscriber<?> s, Connection c) {
-                ResultSet rs;
+            private ResultSet executeQuery(Subscriber<?> subscriber, Connection connection) {
+                ResultSet resultSet;
                 try {
-                    log.info("Executing JDBC query {}", sql);
-                    rs = c.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(sql);
+                    log.info("Executing JDBC query {}", pumpSettings.getQueryIn());
+                    resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(pumpSettings.getQueryIn());
                     log.info("Got a JDBC ResultSet, streaming results.");
-                    rs.setFetchSize(Integer.MIN_VALUE);
+                    resultSet.setFetchSize(Integer.MIN_VALUE);
                 } catch (Exception e) {
-                    rs = null;
-                    s.onError(e);
+                    resultSet = null;
+                    subscriber.onError(e);
                 }
-                return rs;
+                return resultSet;
             }
 
             private Connection getConnection(Subscriber<?> s) {
                 Connection c;
                 try {
-                    log.info("Connecting to database.");
+                    log.info("Connecting to database...");
                     c = database.getConnectionProvider().get();
                 } catch (Exception e) {
                     c = null;
@@ -126,6 +136,7 @@ public class Pump {
                 }
                 return c;
             }
+
         }).subscribeOn(Schedulers.io());
 
         Observable<Record> transformedRecords;
@@ -148,7 +159,7 @@ public class Pump {
                     public Observable<UserRecordResult> call(Record record) {
                         log.debug("Adding record to Kinesis Producer");
                         return ListenableFutureObservable.from(
-                                kinesisProducer.addUserRecord(stream, record.getPartitionKey(), record.getData()),
+                                kinesisProducer.addUserRecord(pumpSettings.getStreamOut(), record.getPartitionKey(), record.getData()),
                                 Schedulers.io());
                     }
                 });
@@ -173,35 +184,37 @@ public class Pump {
     }
 
     private static class JdbcRecordProducer extends SerializingProducer {
-        private final Subscriber<? super Record> s;
-        private final ResultSet rs;
-        private final Connection c;
+        private final Subscriber<? super Record> subscriber;
+        private final ResultSet resultSet;
+        private final Connection connection;
+        private final PumpSettings pumpSettings;
 
-        public JdbcRecordProducer(Subscriber<? super Record> s, ResultSet rs, Connection c) {
-            this.s = s;
-            this.rs = rs;
-            this.c = c;
+        public JdbcRecordProducer(Subscriber<? super Record> subscriber, ResultSet resultSet, Connection connection, PumpSettings pumpSettings) {
+            this.subscriber = subscriber;
+            this.resultSet = resultSet;
+            this.connection = connection;
+            this.pumpSettings = pumpSettings;
         }
 
         @Override
         protected boolean onItemRequested() {
             boolean keepGoing = true;
             try {
-                if (s.isUnsubscribed()) {
+                if (subscriber.isUnsubscribed()) {
                     keepGoing = false;
                     closeConnection();
                 } else {
-                    if (rs.next()) {
+                    if (resultSet.next()) {
                         log.trace("Got a JDBC result record");
-                        s.onNext(new Record().withPartitionKey(rs.getString("partitionKey")).
-                                withData(ByteBuffer.wrap(rs.getBytes("data"))));
+                        subscriber.onNext(new Record().withPartitionKey(resultSet.getString(pumpSettings.getPartitionKeyColumn())).
+                                withData(ByteBuffer.wrap(resultSet.getBytes(pumpSettings.getRawDataColumn()))));
                     } else {
-                        s.onCompleted();
+                        subscriber.onCompleted();
                         keepGoing = false;
                     }
                 }
             } catch (Exception e) {
-                s.onError(e);
+                subscriber.onError(e);
                 keepGoing = false;
             }
             return keepGoing;
@@ -209,7 +222,7 @@ public class Pump {
 
         private void closeConnection() {
             try {
-                c.close();
+                connection.close();
             } catch (Exception e) {
                 log.warn("Failed to close database connection.", e);
             }

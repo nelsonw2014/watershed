@@ -1,4 +1,4 @@
-package com.commercehub.watershed.pump;
+package com.commercehub.watershed.pump.processing;
 
 import com.amazonaws.util.IOUtils;
 import com.github.davidmoten.rx.jdbc.ConnectionProvider;
@@ -24,12 +24,18 @@ public class IsolatedConnectionProvider {
             if (supportUrl == null) {
                 throw new IllegalStateException("Support jar not found, cannot continue!");
             }
-            File tempJar = File.createTempFile("watershed-pump-support-shadow", ".jar");
-            InputStream in = supportUrl.openStream();
-            FileOutputStream out = new FileOutputStream(tempJar);
-            IOUtils.copy(in, out);
-            out.close();
-            in.close();
+
+            String tDir = System.getProperty("java.io.tmpdir");
+            File tempJar = new File(tDir + "/watershed-pump-support-shadow.jar");
+
+            if(!tempJar.exists()){
+                InputStream in = supportUrl.openStream();
+                FileOutputStream out = new FileOutputStream(tempJar);
+                IOUtils.copy(in, out);
+                out.close();
+                in.close();
+            }
+
             URLClassLoader jdbcLoader = new URLClassLoader(new URL[]{ tempJar.toURI().toURL() }, null);
             Class<?> dsClass = jdbcLoader.loadClass("com.commercehub.watershed.pump.support.DataSource");
             final DataSource ds = (DataSource)

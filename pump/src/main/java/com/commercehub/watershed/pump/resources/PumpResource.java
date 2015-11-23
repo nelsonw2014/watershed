@@ -15,6 +15,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Collection;
 
 
@@ -58,7 +59,7 @@ public class PumpResource {
 
     @Path("/preview")
     @POST
-    public Response previewJob(@Valid PreviewSettings previewSettings) throws IOException{
+    public Response previewJob(@Valid PreviewSettings previewSettings) throws IOException, SQLException{
         JobPreview jobPreview = jobService.getJobPreview(previewSettings);
 
         String response = objectMapper.writeValueAsString(jobPreview);

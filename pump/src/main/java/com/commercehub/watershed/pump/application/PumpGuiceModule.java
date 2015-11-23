@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.io.InputStream;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -166,6 +167,11 @@ public class PumpGuiceModule extends AbstractModule {
         }
 
         return database;
+    }
+
+    @Provides
+    private Connection connectionProvider(Database database){
+        return database.getConnectionProvider().get();
     }
 
     @Provides

@@ -9,6 +9,7 @@ import com.commercehub.watershed.pump.respositories.QueryableRepository;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
@@ -48,7 +49,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public JobPreview getJobPreview(PreviewSettings previewSettings) {
+    public JobPreview getJobPreview(PreviewSettings previewSettings) throws SQLException {
         return repository.getJobPreview(previewSettings);
     }
 }

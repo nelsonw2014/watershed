@@ -3,8 +3,8 @@ package com.commercehub.watershed.pump.respositories;
 
 import com.commercehub.watershed.pump.model.JobPreview;
 import com.commercehub.watershed.pump.model.PreviewSettings;
-import com.github.davidmoten.rx.jdbc.Database;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,11 +18,11 @@ public class DrillRepository implements QueryableRepository {
     private static final Logger log = LoggerFactory.getLogger(DrillRepository.class);
 
     @Inject
-    private Database database;
+    private Provider<Connection> connectionProvider;
 
     @Override
-    public JobPreview getJobPreview(PreviewSettings previewSettings) {
-        Connection connection = database.getConnectionProvider().get();
+    public JobPreview getJobPreview(PreviewSettings previewSettings) throws SQLException {
+        Connection connection = connectionProvider.get();
 
         String countSql = "SELECT count(*) as total FROM (" + previewSettings.getQueryIn() + ")";
         Integer count = null;
@@ -36,10 +36,7 @@ public class DrillRepository implements QueryableRepository {
             resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(previewSettings.getQueryIn());
             resultSet.setFetchSize(previewSettings.getPreviewCount());
 
-            rows = resultSetToArrayList(resultSet, previewSettings.getPreviewCount());
-        }
-        catch(SQLException ex){
-            log.error("Unable to get job preview.", ex);
+            rows = resultSetToList(resultSet, previewSettings.getPreviewCount());
         }
         finally {
             try {
@@ -53,7 +50,7 @@ public class DrillRepository implements QueryableRepository {
         return new JobPreview(count, rows);
     }
 
-    private List<Map<String, String>> resultSetToArrayList(ResultSet resultSet, Integer rowLimit) throws SQLException{
+    private List<Map<String, String>> resultSetToList(ResultSet resultSet, Integer rowLimit) throws SQLException{
         ResultSetMetaData md = resultSet.getMetaData();
         int columns = md.getColumnCount();
         List<Map<String, String>> list = new ArrayList<>();

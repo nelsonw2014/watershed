@@ -88,7 +88,7 @@ public class Pump {
      * to be reported. To cancel pumping, unsubscribe.
      */
     public Observable<UserRecordResult> build() {
-        // Can't actually use rxjava-jdbc with Drill at the moment: Drill'subscriber JDBC client is broken wrt PreparedStatements (DRILL-3566)
+        // Can't actually use rxjava-jdbc with Drill at the moment: Drill's JDBC client is broken wrt PreparedStatements (DRILL-3566)
         // Also not sure whether rxjava-jdbc supports backpressure.
 //        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
 //            @Override

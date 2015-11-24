@@ -34,55 +34,62 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
 
     @Override
     public void onStart(){
-        if(job == null || pump == null) return;
-
-        job.setStage(ProcessingStage.IN_PROGRESS);
-        job.setStartTime(Instant.now().toDateTime());
-        job.setSuccessfulRecordCount(0L);
-        job.setFailureRecordCount(0L);
+        if(job != null){
+            job.setStage(ProcessingStage.IN_PROGRESS);
+            job.setStartTime(Instant.now().toDateTime());
+            job.setSuccessfulRecordCount(0L);
+            job.setFailureRecordCount(0L);
+        }
 
         request(numRecordsPerChunk);
     }
 
     @Override
     public void onCompleted() {
-        if(job == null || pump == null) return;
+        if(pump != null){
+            pump.flushSync();
+            updateStats();
+            pump.destroy();
+        }
 
-        pump.flushSync();
-        updateStats();
-        pump.destroy();
-
-        log.info("Completed (job: {})", job.getJobId());
-        job.setStage(ProcessingStage.COMPLETED_SUCCESS);
-        job.setCompletionTime(Instant.now().toDateTime());
+        if(job != null){
+            log.info("Completed (job: {})", job.getJobId());
+            job.setStage(ProcessingStage.COMPLETED_SUCCESS);
+            job.setCompletionTime(Instant.now().toDateTime());
+        }
     }
 
     public void updateStats() {
-        if(job == null || pump == null) return;
+        if(job != null){
+            job.setSuccessfulRecordCount(successCount.get());
+            job.setFailureRecordCount(failCount.get());
 
-        long pendingRecordCount = pump.countPending();
-
-        job.setSuccessfulRecordCount(successCount.get());
-        job.setFailureRecordCount(failCount.get());
-        job.setPendingRecordCount(pendingRecordCount);
+            if(pump != null){
+                job.setPendingRecordCount(pump.countPending());
+            }
+        }
 
         log.info("Emitted {} records successfully, along with {} failures, in {}. Overall mean rate {}. Roughly {} records are pending.",
                 NUM_FMT.format(successCount),
                 NUM_FMT.format(failCount),
-                job.getElapsedTimePretty(),
-                job.getMeanRatePretty(),
-                NUM_FMT.format(pendingRecordCount));
+                (job != null? job.getElapsedTimePretty() : "unknown"),
+                (job != null? job.getMeanRatePretty() : "unknown"),
+                (pump != null? NUM_FMT.format(pump.countPending()) : "unknown"));
     }
 
     @Override
     public void onError(Throwable e) {
         log.error("General failure, aborting.", e);
-        if(job == null || pump == null) return;
 
-        pump.destroy();
-        job.addProcessingError(e);
-        job.setStage(ProcessingStage.COMPLETED_ERROR);
-        job.setCompletionTime(Instant.now().toDateTime());
+        if(pump != null){
+            pump.destroy();
+        }
+
+        if(job != null){
+            job.addProcessingError(e);
+            job.setStage(ProcessingStage.COMPLETED_ERROR);
+            job.setCompletionTime(Instant.now().toDateTime());
+        }
     }
 
     @Override
@@ -96,11 +103,12 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
         }
 
         long total = successCount.get() + failCount.get();
-        if (total == 1 || total % numRecordsPerChunk == 0) {
+        if (total == 1) {
             updateStats();
         }
 
         if (total % numRecordsPerChunk == 0) {
+            updateStats();
             request(numRecordsPerChunk);
         }
     }

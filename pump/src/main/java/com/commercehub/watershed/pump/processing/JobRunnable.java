@@ -19,13 +19,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
-    private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
 
     private Job job;
     private TransformerService transformerService;
     private Provider<Pump> pumpProvider;
     private Provider<PumpSubscriber> pumpSubscriberProvider;
-    private int numRecordsPerChunk;
 
     public JobRunnable(
             TransformerService transformerService,
@@ -37,19 +35,13 @@ public class JobRunnable implements Runnable {
         this.pumpSubscriberProvider = pumpSubscriberProvider;
     }
 
-    public JobRunnable withJob(Job job){
+    public JobRunnable with(Job job){
         this.job = job;
         return this;
     }
 
     public void run(){
         if(job == null) return;
-
-        processJob(job);
-    }
-
-
-    private void processJob(final Job job){
 
         PumpSettings pumpSettings = job.getPumpSettings();
         final Pump pump = pumpProvider.get()
@@ -65,6 +57,7 @@ public class JobRunnable implements Runnable {
         }, "KPL shutdown hook"));
 
         Observable<UserRecordResult> results = pump.build();
+        //PumpSubscriber automatically kicks off Pump in its onStart method.
         Subscription subscription = results.subscribe(pumpSubscriberProvider.get().with(job, pump));
         job.setPumpSubscription(subscription);
     }

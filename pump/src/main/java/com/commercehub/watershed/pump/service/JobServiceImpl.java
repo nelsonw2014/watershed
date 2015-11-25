@@ -34,7 +34,7 @@ public class JobServiceImpl implements JobService {
         Job job = new Job(UUID.randomUUID().toString(), pumpSettings);
         jobMap.put(job.getJobId(), job);
 
-        executor.submit(jobRunnableProvider.get().withJob(job));
+        executor.submit(jobRunnableProvider.get().with(job));
         return job;
     }
 

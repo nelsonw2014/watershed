@@ -43,7 +43,7 @@ class JobServiceImplSpec extends Specification {
 
         then:
         1 * jobRunnableProvider.get() >> jobRunnable
-        1 * jobRunnable.withJob(_ as Job) >> jobRunnable
+        1 * jobRunnable.with(_ as Job) >> jobRunnable
         1 * executor.submit(_ as JobRunnable)
         jobMap.size() == 1
         jobMap.get(job.jobId) == job

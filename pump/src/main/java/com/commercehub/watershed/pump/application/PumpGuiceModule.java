@@ -4,7 +4,10 @@ import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.kinesis.AmazonKinesisClient;
+import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.processing.IsolatedConnectionProvider;
@@ -13,10 +16,7 @@ import com.commercehub.watershed.pump.processing.Pump;
 import com.commercehub.watershed.pump.processing.PumpSubscriber;
 import com.commercehub.watershed.pump.respositories.DrillRepository;
 import com.commercehub.watershed.pump.respositories.QueryableRepository;
-import com.commercehub.watershed.pump.service.JobService;
-import com.commercehub.watershed.pump.service.JobServiceImpl;
-import com.commercehub.watershed.pump.service.TransformerService;
-import com.commercehub.watershed.pump.service.TransformerServiceImpl;
+import com.commercehub.watershed.pump.service.*;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,6 +57,7 @@ public class PumpGuiceModule extends AbstractModule {
         bind(JobService.class).to(JobServiceImpl.class);
         bind(QueryableRepository.class).to(DrillRepository.class);
         bind(TransformerService.class).to(TransformerServiceImpl.class);
+        bind(KinesisService.class).to(KinesisServiceImpl.class);
     }
 
     @Provides
@@ -111,13 +112,23 @@ public class PumpGuiceModule extends AbstractModule {
     }
 
     @Provides
-    private Pump pumpProvider(Database database, KinesisProducerConfiguration kinesisProducerConfiguration, @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond){
-        return new Pump(database, kinesisProducerConfiguration, maxRecordsPerShardPerSecond);
+    private Pump pumpProvider(
+            Connection connection,
+            KinesisProducer kinesisProducer,
+            KinesisService kinesisService,
+            @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond,
+            @Named("producerRateLimit") int producerRateLimit){
+        return new Pump(connection, kinesisProducer, kinesisService, maxRecordsPerShardPerSecond, producerRateLimit);
     }
 
     @Provides
     private PumpSubscriber pumpSubscriberProvider(@Named("numRecordsPerChunk") int numRecordsPerChunk){
         return new PumpSubscriber(numRecordsPerChunk);
+    }
+
+    @Provides
+    private KinesisProducer kinesisProducerProvider(KinesisProducerConfiguration kinesisProducerConfiguration){
+        return new KinesisProducer(kinesisProducerConfiguration);
     }
 
     @Provides
@@ -133,10 +144,18 @@ public class PumpGuiceModule extends AbstractModule {
 
         // Pump works more smoothly when shards are not saturated, so 95% is a good maximum rate.
         // May be lowered further to share capacity with running applications.
-        kinesisConfig.setRateLimit(50);
+        kinesisConfig.setRateLimit((int) properties.get("producerRateLimit"));
 
         //TODO set more Kinesis Configuration options as appropriate
         return kinesisConfig;
+    }
+
+    @Provides
+    @Singleton
+    private AmazonKinesisClient getKinesisClient(KinesisProducerConfiguration kinesisConfig){
+        AmazonKinesisClient kinesisClient = new AmazonKinesisClient(kinesisConfig.getCredentialsProvider());
+        kinesisClient.setRegion(Region.getRegion(Regions.fromName(kinesisConfig.getRegion())));
+        return kinesisClient;
     }
 
     @Provides

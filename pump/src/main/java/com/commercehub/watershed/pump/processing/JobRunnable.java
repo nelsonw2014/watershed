@@ -2,20 +2,14 @@ package com.commercehub.watershed.pump.processing;
 
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.Job;
-import com.commercehub.watershed.pump.model.ProcessingStage;
 import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.TransformerService;
-import com.google.common.base.Optional;
 import com.google.inject.Provider;
-import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
-import rx.Subscriber;
 import rx.Subscription;
 
-import java.text.NumberFormat;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
@@ -41,12 +35,14 @@ public class JobRunnable implements Runnable {
     }
 
     public void run(){
-        if(job == null) return;
+        if(job == null){
+            throw new IllegalStateException("Job cannot be null.");
+        }
 
         PumpSettings pumpSettings = job.getPumpSettings();
         final Pump pump = pumpProvider.get()
                 .with(pumpSettings)
-                .with(Optional.of(transformerService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag())));
+                .with(transformerService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -57,7 +53,6 @@ public class JobRunnable implements Runnable {
         }, "KPL shutdown hook"));
 
         Observable<UserRecordResult> results = pump.build();
-        //PumpSubscriber automatically kicks off Pump in its onStart method.
         Subscription subscription = results.subscribe(pumpSubscriberProvider.get().with(job, pump));
         job.setPumpSubscription(subscription);
     }

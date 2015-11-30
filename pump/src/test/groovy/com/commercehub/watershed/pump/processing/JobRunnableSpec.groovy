@@ -38,8 +38,6 @@ public class JobRunnableSpec extends Specification {
 
         job.getPumpSettings() >> new PumpSettings()
         transformerService.addReplayFlags(_, _) >> Mock(Function)
-
-
     }
 
     def "run creates a Pump, calls build(), and subscribes to it"(){
@@ -47,8 +45,8 @@ public class JobRunnableSpec extends Specification {
         jobRunnable.run()
 
         then:
-        1 * pump.with(_ as Optional<? extends Function<byte[], byte[]>>) >> pump
         1 * pumpProvider.get() >> pump
+        1 * pump.with(_ as Function<byte[], byte[]>) >> pump
         1 * pump.with(_ as PumpSettings) >> pump
 
         then:
@@ -60,6 +58,22 @@ public class JobRunnableSpec extends Specification {
 
         then:
         1 * onSubscribe.call(_)
+        1 * pumpSubscriber.onStart()
+    }
+
+    def "jobRunnable doesn't run without a job"(){
+        setup:
+        jobRunnable.with(null)
+
+        when:
+        jobRunnable.run()
+
+        then:
+        thrown(IllegalStateException)
+        0 * pumpProvider.get()
+        0 * pump.build()
+        0 * pumpSubscriberProvider.get()
+        0 * pumpSubscriber.onStart()
     }
 
 }

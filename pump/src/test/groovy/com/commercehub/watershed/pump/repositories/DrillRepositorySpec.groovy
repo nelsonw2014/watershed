@@ -83,4 +83,59 @@ class DrillRepositorySpec extends Specification{
         jobPreview.rows == [["bool":"true"]]
     }
 
+    def "getJobPreview handles String values with resultSetToList"(){
+        setup:
+        PreviewSettings previewSettings = new PreviewSettings(queryIn: "select * from foo", previewCount: 1)
+        resultSet.next() >> true
+        resultSet.getInt("total") >> 1
+        resultSetMetaData.getColumnCount() >> 1
+        resultSetMetaData.getColumnType(1) >> Types.VARCHAR
+        resultSetMetaData.getColumnName(1) >> "string"
+        resultSet.getBytes(1) >> "value".bytes
+
+        when:
+        JobPreview jobPreview = drillRepository.getJobPreview(previewSettings)
+
+        then:
+        2 * statement.executeQuery(_) >> resultSet
+        1 * resultSet.getRow() >> 0
+        resultSet.next() >> true
+
+        then:
+        1 * resultSet.getRow() >> 1
+        resultSet.next() >> false
+
+        then:
+        jobPreview.count == 1
+        jobPreview.rows.size() == 1
+        jobPreview.rows == [["string":"value"]]
+    }
+
+    def "getJobPreview handles Integer values with resultSetToList"(){
+        setup:
+        PreviewSettings previewSettings = new PreviewSettings(queryIn: "select * from foo", previewCount: 1)
+        resultSet.next() >> true
+        resultSet.getInt("total") >> 1
+        resultSetMetaData.getColumnCount() >> 1
+        resultSetMetaData.getColumnType(1) >> Types.INTEGER
+        resultSetMetaData.getColumnName(1) >> "integer"
+        resultSet.getBytes(1) >> "1".bytes
+
+        when:
+        JobPreview jobPreview = drillRepository.getJobPreview(previewSettings)
+
+        then:
+        2 * statement.executeQuery(_) >> resultSet
+        1 * resultSet.getRow() >> 0
+        resultSet.next() >> true
+
+        then:
+        1 * resultSet.getRow() >> 1
+        resultSet.next() >> false
+
+        then:
+        jobPreview.count == 1
+        jobPreview.rows.size() == 1
+        jobPreview.rows == [["integer":"1"]]
+    }
 }

@@ -6,6 +6,7 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult
 import com.commercehub.watershed.pump.model.Job
 import com.commercehub.watershed.pump.model.PumpSettings
 import com.commercehub.watershed.pump.service.KinesisService
+import com.google.common.base.Function
 import com.google.common.util.concurrent.Futures
 import rx.Observable
 import rx.observers.TestSubscriber
@@ -32,45 +33,60 @@ public class PumpSpec extends Specification {
     ResultSet resultSet
     ResultSetMetaData resultSetMetaData
     UserRecordResult userRecordResult
+    Function recordTransformer
+    Observable<UserRecordResult> results
 
     String partitonKeyColumnName = "partition_key"
     String rawDataColumnName = "raw_data"
 
+
     def setup(){
         job = Mock(Job)
-        connection = Mock(Connection)
+        recordTransformer = Mock(Function)
+
+        setupResultSet()
+        setupPumpSettings()
+        setupKinesis()
+
+        pump = new Pump(connection, kinesisProducer, kinesisService, 5, 1).with(pumpSettings)
+
+        testSubscriber = TestSubscriber.create(1)
+        results = pump.build()
+    }
+
+    def setupResultSet(){
         statement = Mock(Statement)
-        resultSet = Mock(ResultSet)
+        connection = Mock(Connection)
         resultSetMetaData = Mock(ResultSetMetaData)
-        userRecordResult = Mock(UserRecordResult)
-
-        pumpSettings = Mock(PumpSettings)
-        kinesisProducer = Mock(KinesisProducer)
-        kinesisService = Mock(KinesisService)
-        testSubscriber = new TestSubscriber<>()
-
+        resultSet = Mock(ResultSet)
         connection.createStatement(_, _) >> statement
-        resultSet.getMetaData() >> resultSetMetaData
 
+        resultSet.getMetaData() >> resultSetMetaData
+        resultSet.next() >> true
+        resultSet.getString(partitonKeyColumnName) >> "key"
+        resultSet.getBytes(rawDataColumnName) >> "data".getBytes()
+
+        statement.executeQuery("select * from foo") >> resultSet
+    }
+
+    def setupPumpSettings(){
+        pumpSettings = Mock(PumpSettings)
         pumpSettings.getPartitionKeyColumn() >> partitonKeyColumnName
         pumpSettings.getRawDataColumn() >> rawDataColumnName
         pumpSettings.getStreamOut() >> "stream"
 
         pumpSettings.getQueryIn() >> "select * from foo"
-        statement.executeQuery("select * from foo") >> resultSet
-
-        resultSet.next() >> true
-        resultSet.getString(partitonKeyColumnName) >> "key"
-        resultSet.getBytes(rawDataColumnName) >> "data".getBytes()
-
-
-        pump = new Pump(connection, kinesisProducer, kinesisService, 5, 1).with(pumpSettings)
     }
 
+    def setupKinesis(){
+        kinesisProducer = Mock(KinesisProducer)
+        kinesisService = Mock(KinesisService)
+        userRecordResult = Mock(UserRecordResult)
+    }
 
     def "pump queries database when subscriber subscribes"(){
         setup:
-        Observable<UserRecordResult> results = pump.build()
+        testSubscriber = new TestSubscriber<>()
 
         when:
         results.subscribe(testSubscriber)
@@ -84,9 +100,6 @@ public class PumpSpec extends Specification {
     }
 
     def "error when pump queries database"(){
-        setup:
-        Observable<UserRecordResult> results = pump.build()
-
         when:
         results.subscribe(testSubscriber)
         testSubscriber.awaitTerminalEvent()
@@ -103,11 +116,6 @@ public class PumpSpec extends Specification {
     }
 
     def "subscriber receives onNext from producer"(){
-        setup:
-        //subscribe for one record
-        testSubscriber = TestSubscriber.create(1)
-        Observable<UserRecordResult> results = pump.build()
-
         when:
         results.subscribe(testSubscriber)
         testSubscriber.awaitTerminalEvent()
@@ -128,12 +136,7 @@ public class PumpSpec extends Specification {
         testSubscriber.assertCompleted()
     }
 
-    def "subscriber receives onErorr when producer errors"(){
-        setup:
-        //subscribe for one record
-        testSubscriber = TestSubscriber.create(1)
-        Observable<UserRecordResult> results = pump.build()
-
+    def "subscriber receives onError when producer errors"(){
         when:
         results.subscribe(testSubscriber)
         testSubscriber.awaitTerminalEvent()
@@ -152,5 +155,31 @@ public class PumpSpec extends Specification {
         testSubscriber.assertNoValues()
         testSubscriber.assertTerminalEvent()
         testSubscriber.assertNotCompleted()
+    }
+
+    def "records transformed if transformer provided"(){
+        setup:
+        pump.with(recordTransformer)
+        results = pump.build()
+
+        when:
+        results.subscribe(testSubscriber)
+        testSubscriber.awaitTerminalEvent()
+
+        then:
+        1 * resultSet.next() >> true
+
+        then:
+        //record transformer is called
+        1 * recordTransformer.apply(ByteBuffer.wrap("data".getBytes()).array()) >> "transformed data".getBytes()
+        1 * kinesisProducer.addUserRecord("stream", "key", ByteBuffer.wrap("transformed data".getBytes())) >> new Futures.ImmediateSuccessfulFuture(userRecordResult)
+        1 * resultSet.next() >> false
+
+        then:
+        //subscriber is told about the transformed record
+        testSubscriber.assertNoErrors()
+        testSubscriber.assertReceivedOnNext([userRecordResult])
+        testSubscriber.assertValue(userRecordResult)
+        testSubscriber.assertCompleted()
     }
 }

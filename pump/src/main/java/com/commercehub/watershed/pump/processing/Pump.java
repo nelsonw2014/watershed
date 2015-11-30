@@ -126,7 +126,8 @@ public class Pump {
                     return record.clone().withData(ByteBuffer.wrap(recordTransformer.apply(record.getData().array())));
                 }
             });
-        } else {
+        }
+        else {
             transformedRecords = dbRecords;
         }
 

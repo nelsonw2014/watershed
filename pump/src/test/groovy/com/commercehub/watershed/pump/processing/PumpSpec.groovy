@@ -182,4 +182,45 @@ public class PumpSpec extends Specification {
         testSubscriber.assertValue(userRecordResult)
         testSubscriber.assertCompleted()
     }
+
+    def "subscriber receives onError when resultSet errors"(){
+        when:
+        results.subscribe(testSubscriber)
+        testSubscriber.awaitTerminalEvent()
+
+        then:
+        //resultSet errors on a record
+        1 * resultSet.next() >> { throw new SQLException() }
+
+        then:
+        //subscriber is told about the error
+        testSubscriber.assertError(SQLException.class)
+        testSubscriber.assertNoValues()
+        testSubscriber.assertTerminalEvent()
+        testSubscriber.assertNotCompleted()
+    }
+
+    def "destroy() destroys kinesis producer"(){
+        when:
+        pump.destroy()
+
+        then:
+        1 * kinesisProducer.destroy()
+    }
+
+    def "flushSync() calls flushSync on kinesis producer"(){
+        when:
+        pump.flushSync()
+
+        then:
+        1 * kinesisProducer.flushSync()
+    }
+
+    def "countPending() counts pending from kinesis producer"(){
+        when:
+        pump.countPending()
+
+        then:
+        1 * kinesisProducer.getOutstandingRecordsCount()
+    }
 }

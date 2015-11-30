@@ -35,15 +35,14 @@ public class Pump {
     private KinesisService kinesisService;
     private int maxRecordsPerShardPerSecond; //Kinesis service limit, at least prior to aggregation
     private int producerRateLimit;
+
     /**
-     * @param database          Database configuration.
-     * @param sql               SQL to query for stream records. Must produce result columns labeled {@code rawData}, which
-     *                          will be retrieved as a byte array, and {@code partitionKey}, which will be retrieved as
-     *                          a String.
-     *                          Example: {@code SELECT partitionKey, data FROM storage.workspace.table WHERE processDate > '2015-01-01'}
-     * @param stream            Name of Kinesis stream to which records will be published.
-     * @param kinesisConfig     Kinesis configuration - AWS region, credential provider, buffering, retry, rate limiting, metrics, etc.
-     * @param recordTransformer Optional function to transform a stream record before re-publishing it.
+     *
+     * @param connection                    Database connection.
+     * @param kinesisProducer               Produces records for Kinesis.
+     * @param kinesisService                Communicates with Kinesis to retrieve information about Kinesis streams.
+     * @param maxRecordsPerShardPerSecond   The maximum number of records per shard per second that Pump is allowed to handle.
+     * @param producerRateLimit             Limits the maximum allowed put rate for a shard, as a percentage of the backend limits.
      */
     public Pump(
             Connection connection,
@@ -79,15 +78,19 @@ public class Pump {
      * to be reported. To cancel pumping, unsubscribe.
      */
     public Observable<UserRecordResult> build() {
+
         // Can't actually use rxjava-jdbc with Drill at the moment: Drill's JDBC client is broken wrt PreparedStatements (DRILL-3566)
         // Also not sure whether rxjava-jdbc supports backpressure.
-//        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
-//            @Override
-//            public Record call(ResultSet resultSet) throws SQLException {
-//                return new Record().withPartitionKey(resultSet.getString("partitionKey")).
-//                        withData(ByteBuffer.wrap(resultSet.getBytes("data")));
-//            }
-//        });
+        /*
+        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
+            @Override
+            public Record call(ResultSet resultSet) throws SQLException {
+                return new Record().withPartitionKey(resultSet.getString("partitionKey")).
+                        withData(ByteBuffer.wrap(resultSet.getBytes("data")));
+            }
+        });
+        */
+
         Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
             @Override
             public void call(final Subscriber<? super Record> subscriber) {

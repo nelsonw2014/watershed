@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import rx.Observable;
 import rx.Subscription;
 
-
+/**
+ * Kicks off a Pump instance to run a Job.
+ */
 public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
 
@@ -29,11 +31,19 @@ public class JobRunnable implements Runnable {
         this.pumpSubscriberProvider = pumpSubscriberProvider;
     }
 
+    /**
+     * Specify a Job to run Pump against
+     * @param job
+     * @return this
+     */
     public JobRunnable with(Job job){
         this.job = job;
         return this;
     }
 
+    /**
+     * Run Pump
+     */
     public void run(){
         if(job == null){
             throw new IllegalStateException("Job cannot be null.");

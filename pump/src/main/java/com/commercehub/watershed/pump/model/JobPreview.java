@@ -3,27 +3,51 @@ package com.commercehub.watershed.pump.model;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Result after querying Drill for a "preview" of a Job
+ */
 public class JobPreview {
     private Integer count;
     private List<Map<String, String>> rows;
 
+    /**
+     *
+     * @param count
+     * @param rows
+     */
     public JobPreview(Integer count, List<Map<String, String>> rows) {
         this.count = count;
         this.rows = rows;
     }
 
+    /**
+     *
+     * @return the count of all records in the query
+     */
     public Integer getCount() {
         return count;
     }
 
+    /**
+     * set the count of records in the query
+     * @param count
+     */
     public void setCount(Integer count) {
         this.count = count;
     }
 
+    /**
+     *
+     * @return a preview of rows that will be processed (usually a subset of the full query results)
+     */
     public List<Map<String, String>> getRows() {
         return rows;
     }
 
+    /**
+     * set the row preview (usually a subset of the full query results)
+     * @param rows
+     */
     public void setRows(List<Map<String, String>> rows) {
         this.rows = rows;
     }

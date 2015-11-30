@@ -16,6 +16,7 @@ public class KinesisServiceImpl implements KinesisService {
         numShards += numShardsDescribed;
         while (desc.isHasMoreShards()) {
             desc = kinesisClient.describeStream(stream, desc.getShards().get(numShardsDescribed - 1).getShardId()).getStreamDescription();
+            numShards += desc.getShards().size();
         }
         return numShards;
     }

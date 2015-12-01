@@ -133,15 +133,15 @@ public class PumpGuiceModule extends AbstractModule {
     private KinesisProducerConfiguration configureKinesis(@Named("applicationProperties") Properties properties) {
         KinesisProducerConfiguration kinesisConfig = new KinesisProducerConfiguration();
 
-        kinesisConfig.setAggregationEnabled((boolean) properties.get("kinesisAggregationEnabled"));
+        kinesisConfig.setAggregationEnabled(Boolean.valueOf(properties.get("kinesisAggregationEnabled").toString()));
         kinesisConfig.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
 
         kinesisConfig.setRegion(properties.get("kinesisRegion").toString());
-        kinesisConfig.setRecordTtl((long) properties.get("kinesisRecordTtl"));  //Maybe not the best idea to use MAX_VALUE
+        kinesisConfig.setRecordTtl(Long.valueOf(properties.get("kinesisRecordTtl").toString()));  //Maybe not the best idea to use MAX_VALUE
 
         // Pump works more smoothly when shards are not saturated, so 95% is a good maximum rate.
         // May be lowered further to share capacity with running applications.
-        kinesisConfig.setRateLimit((int) properties.get("producerRateLimit"));
+        kinesisConfig.setRateLimit(Integer.valueOf(properties.get("producerRateLimit").toString()));
 
         //TODO set more Kinesis Configuration options as appropriate
         return kinesisConfig;

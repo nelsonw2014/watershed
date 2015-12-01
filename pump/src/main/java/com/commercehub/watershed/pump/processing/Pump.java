@@ -15,12 +15,13 @@ import rx.observable.ListenableFutureObservable;
 import rx.schedulers.Schedulers;
 
 import java.nio.ByteBuffer;
+import java.security.InvalidParameterException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * @author pmogren
+ * Take from the Drill, give to the Kinesis.
  */
 public class Pump {
     private static final Logger log = LoggerFactory.getLogger(Pump.class);
@@ -58,12 +59,22 @@ public class Pump {
         this.producerRateLimit = producerRateLimit;
     }
 
+    /**
+     * Include PumpSettings. Pump will not run without this.
+     * @param pumpSettings
+     * @return this
+     */
     public Pump with(PumpSettings pumpSettings){
         this.pumpSettings = pumpSettings;
         this.shardCount = kinesisService.countShardsInStream(pumpSettings.getStreamOut());
         return this;
     }
 
+    /**
+     * Optionally set a recordTransformer (used to modify the raw data emitted to Kinesis)
+     * @param recordTransformer
+     * @return this
+     */
     public Pump with(Function<byte[], byte[]> recordTransformer){
         this.recordTransformer = recordTransformer;
         return this;
@@ -90,6 +101,10 @@ public class Pump {
             }
         });
         */
+
+        if(this.pumpSettings == null){
+            throw new InvalidParameterException("PumpSettings were not provided.");
+        }
 
         Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
             @Override
@@ -148,6 +163,9 @@ public class Pump {
         return pubResults;
     }
 
+    /**
+     * destroys the kinesis producer, stops emission
+     */
     void destroy() {
         if (kinesisProducer != null) {
             kinesisProducer.destroy();
@@ -155,15 +173,27 @@ public class Pump {
         }
     }
 
+    /**
+     * Instructs the kinesisProducer to flush all records and waits until all
+     * records are complete (either succeeding or failing).
+     */
     void flushSync() {
         log.info("Attempting sync flush of about {} records", kinesisProducer.getOutstandingRecordsCount());
         kinesisProducer.flushSync();
     }
 
+    /**
+     *
+     * @return outstanding record count that hasn't been emitted yet
+     */
     long countPending() {
         return kinesisProducer.getOutstandingRecordsCount();
     }
 
+
+    /**
+     * Producer that takes a ResultSet and turns it into Records for Kinesis emission.
+     */
     private static class JdbcRecordProducer extends SerializingProducer {
         private final Subscriber<? super Record> subscriber;
         private final ResultSet resultSet;
@@ -177,6 +207,9 @@ public class Pump {
             this.pumpSettings = pumpSettings;
         }
 
+        /**
+         * @return whether it is okay to continue requesting items
+         */
         @Override
         protected boolean onItemRequested() {
             boolean keepGoing = true;
@@ -201,6 +234,9 @@ public class Pump {
             return keepGoing;
         }
 
+        /**
+         * closes database connection
+         */
         private void closeConnection() {
             try {
                 connection.close();
@@ -209,6 +245,14 @@ public class Pump {
             }
         }
 
+        /**
+         *
+         * @param resultSet from the database query
+         * @param partitionKeyColumn column to use for the partition key value
+         * @param rawDataColumn column to use for the raw data
+         * @return
+         * @throws SQLException
+         */
         private Record buildRecord(ResultSet resultSet, String partitionKeyColumn, String rawDataColumn) throws SQLException{
             Record record = new Record();
             record.withPartitionKey(resultSet.getString(partitionKeyColumn));

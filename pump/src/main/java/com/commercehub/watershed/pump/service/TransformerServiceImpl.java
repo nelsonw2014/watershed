@@ -18,7 +18,12 @@ public class TransformerServiceImpl implements TransformerService {
     @Inject
     private ObjectMapper objectMapper;
 
-
+    /**
+     * Function that adds Replay and Overwrite flags to a JSON object.
+     * @param replayEnabled
+     * @param overwriteEnabled
+     * @return Function
+     */
     public Function<byte[], byte[]> addReplayFlags(Boolean replayEnabled, Boolean overwriteEnabled) {
         final BooleanNode replayEnabledNode = replayEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
         final BooleanNode overwriteEnabledNode = overwriteEnabled? BooleanNode.TRUE : BooleanNode.FALSE;

@@ -9,6 +9,11 @@ public class KinesisServiceImpl implements KinesisService {
     @Inject
     AmazonKinesisClient kinesisClient;
 
+    /**
+     * Sends an API call to retrieve the number of shards on a Kinesis stream.
+     * @param stream
+     * @return numer of shards on a Kinesis stream.
+     */
     public int countShardsInStream(String stream) {
         int numShards = 0;
         StreamDescription desc = kinesisClient.describeStream(stream).getStreamDescription();

@@ -29,6 +29,11 @@ public class JobServiceImpl implements JobService {
     @Inject
     private QueryableRepository repository;
 
+    /**
+     * Enqueue a Job for processing
+     * @param pumpSettings
+     * @return Job
+     */
     @Override
     public Job enqueueJob(PumpSettings pumpSettings) {
         Job job = new Job(UUID.randomUUID().toString(), pumpSettings);
@@ -38,16 +43,31 @@ public class JobServiceImpl implements JobService {
         return job;
     }
 
+    /**
+     * Retrieve a Job from the in-memory Job map
+     * @param jobId
+     * @return Job
+     */
     @Override
     public Job getJob(String jobId) {
         return jobMap.get(jobId);
     }
 
+    /**
+     * Retrieve all Jobs from the in-memory Job map
+     * @return a list of Jobs
+     */
     @Override
     public Collection<Job> getAllJobs(){
         return jobMap.values();
     }
 
+    /**
+     * Submits a query for record count and a few preview records
+     * @param previewSettings
+     * @return JobPreview
+     * @throws SQLException
+     */
     @Override
     public JobPreview getJobPreview(PreviewSettings previewSettings) throws SQLException {
         return repository.getJobPreview(previewSettings);

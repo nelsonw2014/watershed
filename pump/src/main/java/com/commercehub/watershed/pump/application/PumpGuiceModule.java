@@ -38,10 +38,10 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
 /**
  * Setup Pump with Guice dependency injection.
  */
-
 public class PumpGuiceModule extends AbstractModule {
     private static final String DEFAULT_PROPERTIES_FILE = "pump.properties";
     private static final Logger log = LoggerFactory.getLogger(PumpGuiceModule.class);

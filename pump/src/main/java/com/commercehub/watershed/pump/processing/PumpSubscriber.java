@@ -11,6 +11,9 @@ import rx.Subscriber;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A Subscriber for Pump that requests records and manages Job statistics
+ */
 public class PumpSubscriber extends Subscriber<UserRecordResult> {
     private static final Logger log = LoggerFactory.getLogger(PumpSubscriber.class);
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
@@ -26,12 +29,21 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
         this.numRecordsPerChunk = numRecordsPerChunk;
     }
 
+    /**
+     * Specify which Job and Pump this subscriber is tied to
+     * @param job the Job
+     * @param pump the Pump
+     * @return this
+     */
     public PumpSubscriber with(Job job, Pump pump){
         this.job = job;
         this.pump = pump;
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onStart(){
         if(job != null){
@@ -44,6 +56,9 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
         request(numRecordsPerChunk);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onCompleted() {
         if(pump != null){
@@ -59,6 +74,9 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
         }
     }
 
+    /**
+     * Populates Job with statistics for current state of Pump
+     */
     public void updateStats() {
         if(job != null){
             job.setSuccessfulRecordCount(successCount.get());
@@ -77,6 +95,9 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
                 (pump != null? NUM_FMT.format(pump.countPending()) : "unknown"));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onError(Throwable e) {
         log.error("General failure, aborting.", e);
@@ -92,6 +113,9 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onNext(UserRecordResult userRecordResult) {
         log.trace("Got a Kinesis result.");

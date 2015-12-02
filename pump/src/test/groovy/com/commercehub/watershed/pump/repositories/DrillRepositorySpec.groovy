@@ -36,8 +36,9 @@ class DrillRepositorySpec extends Specification{
 
     def "getJobPreview uses 'count' query to determine row count"(){
         setup:
-        PreviewSettings previewSettings = new PreviewSettings(queryIn: "select * from foo", previewCount: 3)
-        String expectedCountQuery = "SELECT count(*) as total FROM (select * from foo)"
+        String query = "select * from foo"
+        PreviewSettings previewSettings = new PreviewSettings(queryIn: query, previewCount: 3)
+        String expectedCountQuery = "SELECT count(*) as total FROM (" + query + ")"
         resultSet.next() >> false
         resultSetMetaData.getColumnCount() >> 1
 

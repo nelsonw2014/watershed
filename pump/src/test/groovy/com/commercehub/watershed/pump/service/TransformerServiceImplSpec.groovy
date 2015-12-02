@@ -10,13 +10,13 @@ import spock.lang.Specification
 
 class TransformerServiceImplSpec extends Specification {
 
-    TransformerService transformerService
+    RecordTransformerService transformerService
 
     def setup() {
         GuiceBridge.setOverrideInjector(Guice.createInjector(new PumpGuiceModule()))
         ObjectMapper objectMapper = GuiceBridge.getInjector().getInstance(ObjectMapper)
 
-        transformerService = new TransformerServiceImpl(objectMapper: objectMapper)
+        transformerService = new JsonRecordTransformerService(objectMapper: objectMapper)
     }
 
     def "replay flags added correctly when not present"(Boolean replayEnabled, Boolean overwriteEnabled) {

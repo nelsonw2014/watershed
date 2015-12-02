@@ -3,9 +3,8 @@ package com.commercehub.watershed.pump.processing
 import com.amazonaws.services.kinesis.producer.UserRecordResult
 import com.commercehub.watershed.pump.model.Job
 import com.commercehub.watershed.pump.model.PumpSettings
-import com.commercehub.watershed.pump.service.TransformerService
+import com.commercehub.watershed.pump.service.RecordTransformerService
 import com.google.common.base.Function
-import com.google.common.base.Optional
 import com.google.inject.Provider
 import rx.Observable
 import spock.lang.Specification
@@ -16,7 +15,7 @@ public class JobRunnableSpec extends Specification {
     Job job
     Pump pump
     PumpSubscriber pumpSubscriber
-    TransformerService transformerService
+    RecordTransformerService transformerService
     Provider<Pump> pumpProvider
     Provider<PumpSubscriber> pumpSubscriberProvider
     Observable<UserRecordResult> UserRecordResultObservable
@@ -27,7 +26,7 @@ public class JobRunnableSpec extends Specification {
         job = Mock(Job)
         pump = Mock(Pump)
         pumpSubscriber = Mock(PumpSubscriber)
-        transformerService = Mock(TransformerService)
+        transformerService = Mock(RecordTransformerService)
         pumpProvider = Mock(Provider)
         pumpSubscriberProvider = Mock(Provider)
         onSubscribe = Mock(Observable.OnSubscribe)

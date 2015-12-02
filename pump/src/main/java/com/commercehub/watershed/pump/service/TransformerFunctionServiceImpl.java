@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 
-public class JsonRecordTransformerService implements RecordTransformerService {
-    private static final Logger log = LoggerFactory.getLogger(JsonRecordTransformerService.class);
+public class TransformerFunctionServiceImpl implements TransformerFunctionService {
+    private static final Logger log = LoggerFactory.getLogger(TransformerFunctionServiceImpl.class);
 
     @Inject
     private ObjectMapper objectMapper;

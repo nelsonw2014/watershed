@@ -3,7 +3,7 @@ package com.commercehub.watershed.pump.processing;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.PumpSettings;
-import com.commercehub.watershed.pump.service.RecordTransformerService;
+import com.commercehub.watershed.pump.service.TransformerFunctionService;
 import com.google.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,16 +15,16 @@ public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
 
     private Job job;
-    private RecordTransformerService recordTransformerService;
+    private TransformerFunctionService transformerFunctionService;
     private Provider<Pump> pumpProvider;
     private Provider<PumpSubscriber> pumpSubscriberProvider;
 
     public JobRunnable(
-            RecordTransformerService recordTransformerService,
+            TransformerFunctionService transformerFunctionService,
             Provider<Pump> pumpProvider,
             Provider<PumpSubscriber> pumpSubscriberProvider){
 
-        this.recordTransformerService = recordTransformerService;
+        this.transformerFunctionService = transformerFunctionService;
         this.pumpProvider = pumpProvider;
         this.pumpSubscriberProvider = pumpSubscriberProvider;
     }
@@ -42,7 +42,7 @@ public class JobRunnable implements Runnable {
         PumpSettings pumpSettings = job.getPumpSettings();
         final Pump pump = pumpProvider.get()
                 .with(pumpSettings)
-                .with(recordTransformerService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
+                .with(transformerFunctionService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override

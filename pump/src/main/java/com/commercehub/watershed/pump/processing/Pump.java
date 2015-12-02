@@ -6,6 +6,9 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.KinesisService;
 import com.google.common.base.Function;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -32,7 +35,6 @@ public class Pump {
     private Function<byte[], byte[]> recordTransformer;
     private KinesisProducer kinesisProducer;
     private PumpSettings pumpSettings;
-    private KinesisService kinesisService;
     private int maxRecordsPerShardPerSecond; //Kinesis service limit, at least prior to aggregation
     private int producerRateLimit;
 
@@ -44,32 +46,24 @@ public class Pump {
      * @param maxRecordsPerShardPerSecond   The maximum number of records per shard per second that Pump is allowed to handle.
      * @param producerRateLimit             Limits the maximum allowed put rate for a shard, as a percentage of the backend limits.
      */
+    @Inject
     public Pump(
-            Connection connection,
-            KinesisProducer kinesisProducer,
-            KinesisService kinesisService,
-            int maxRecordsPerShardPerSecond,
-            int producerRateLimit) {
+            @Assisted Connection connection,
+            @Assisted KinesisProducer kinesisProducer,
+            @Assisted KinesisService kinesisService,
+            @Assisted("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond,
+            @Assisted("producerRateLimit") int producerRateLimit,
+            PumpSettings pumpSettings,
+            Function<byte[], byte[]> recordTransformer) {
 
         this.connection = connection;
         this.kinesisProducer = kinesisProducer;
-        this.kinesisService = kinesisService;
         this.maxRecordsPerShardPerSecond = maxRecordsPerShardPerSecond;
         this.producerRateLimit = producerRateLimit;
-    }
-
-    public Pump with(PumpSettings pumpSettings){
         this.pumpSettings = pumpSettings;
-        this.shardCount = kinesisService.countShardsInStream(pumpSettings.getStreamOut());
-        return this;
-    }
-
-    public Pump with(Function<byte[], byte[]> recordTransformer){
         this.recordTransformer = recordTransformer;
-        return this;
+        this.shardCount = kinesisService.countShardsInStream(pumpSettings.getStreamOut());
     }
-
-
 
     /**
      * Defines an Observable pipeline to issue a query, transform records, and publish records to Kinesis. Does not

@@ -1,5 +1,6 @@
 package com.commercehub.watershed.pump.service;
 
+import com.commercehub.watershed.pump.application.factories.JobFactory;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.JobPreview;
 import com.commercehub.watershed.pump.model.PreviewSettings;
@@ -29,9 +30,12 @@ public class JobServiceImpl implements JobService {
     @Inject
     private QueryableRepository repository;
 
+    @Inject
+    private JobFactory jobFactory;
+
     @Override
     public Job enqueueJob(PumpSettings pumpSettings) {
-        Job job = new Job(UUID.randomUUID().toString(), pumpSettings);
+        Job job = jobFactory.create(UUID.randomUUID().toString(), pumpSettings);
         jobMap.put(job.getJobId(), job);
 
         executor.submit(jobRunnableProvider.get().with(job));

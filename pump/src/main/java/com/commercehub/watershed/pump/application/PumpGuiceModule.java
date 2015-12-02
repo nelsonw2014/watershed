@@ -6,6 +6,9 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
+import com.commercehub.watershed.pump.application.factories.JobFactory;
+import com.commercehub.watershed.pump.application.factories.PumpFactory;
+import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.processing.IsolatedConnectionProvider;
 import com.commercehub.watershed.pump.processing.JobRunnable;
@@ -25,6 +28,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +59,12 @@ public class PumpGuiceModule extends AbstractModule {
         bind(QueryableRepository.class).to(DrillRepository.class);
         bind(TransformerFunctionFactory.class).to(TransformerFunctionFactoryImpl.class);
         bind(KinesisService.class).to(KinesisServiceImpl.class);
+        bind(TimeService.class).to(SystemTimeService.class);
+
+        //Assisted Injection https://github.com/google/guice/wiki/AssistedInject
+        install(new FactoryModuleBuilder().implement(Job.class, Job.class).build(JobFactory.class));
+        install(new FactoryModuleBuilder().implement(Pump.class, Pump.class).build(PumpFactory.class));
+        install(new FactoryModuleBuilder().implement(PumpSubscriber.class, PumpSubscriber.class).build(PumpSubscriberFactory.class));
     }
 
     @Provides
@@ -104,18 +114,8 @@ public class PumpGuiceModule extends AbstractModule {
 
 
     @Provides
-    private JobRunnable jobRunnableProvider(TransformerFunctionFactory transformerFunctionFactory, Provider<Pump> pumpProvider, Provider<PumpSubscriber> pumpSubscriber){
-        return new JobRunnable(transformerFunctionFactory, pumpProvider, pumpSubscriber);
-    }
-
-    @Provides
-    private Pump pumpProvider(
-            Connection connection,
-            KinesisProducer kinesisProducer,
-            KinesisService kinesisService,
-            @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond,
-            @Named("producerRateLimit") int producerRateLimit){
-        return new Pump(connection, kinesisProducer, kinesisService, maxRecordsPerShardPerSecond, producerRateLimit);
+    private JobRunnable jobRunnableProvider(TransformerFunctionFactory transformerFunctionFactory, PumpFactory pumpFactory, PumpSubscriberFactory pumpSubscriberFactory){
+        return new JobRunnable(transformerFunctionFactory, pumpFactory, pumpSubscriberFactory);
     }
 
     @Provides

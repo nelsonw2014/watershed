@@ -1,6 +1,8 @@
 package com.commercehub.watershed.pump.processing;
 
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.commercehub.watershed.pump.application.factories.PumpFactory;
+import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.TransformerFunctionFactory;
@@ -16,17 +18,18 @@ public class JobRunnable implements Runnable {
 
     private Job job;
     private TransformerFunctionFactory transformerFunctionFactory;
-    private Provider<Pump> pumpProvider;
-    private Provider<PumpSubscriber> pumpSubscriberProvider;
+
+    private PumpFactory pumpFactory;
+    private PumpSubscriberFactory pumpSubscriberFactory;
 
     public JobRunnable(
             TransformerFunctionFactory transformerFunctionFactory,
-            Provider<Pump> pumpProvider,
-            Provider<PumpSubscriber> pumpSubscriberProvider){
+            PumpFactory pumpFactory,
+            PumpSubscriberFactory pumpSubscriberFactory){
 
         this.transformerFunctionFactory = transformerFunctionFactory;
-        this.pumpProvider = pumpProvider;
-        this.pumpSubscriberProvider = pumpSubscriberProvider;
+        this.pumpFactory = pumpFactory;
+        this.pumpSubscriberFactory = pumpSubscriberFactory;
     }
 
     public JobRunnable with(Job job){
@@ -40,9 +43,9 @@ public class JobRunnable implements Runnable {
         }
 
         PumpSettings pumpSettings = job.getPumpSettings();
-        final Pump pump = pumpProvider.get()
-                .with(pumpSettings)
-                .with(transformerFunctionFactory.getReplayFlagTransformFunction(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
+        final Pump pump = pumpFactory.create(
+                pumpSettings,
+                transformerFunctionFactory.getReplayFlagTransformFunction(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -53,7 +56,7 @@ public class JobRunnable implements Runnable {
         }, "KPL shutdown hook"));
 
         Observable<UserRecordResult> results = pump.build();
-        Subscription subscription = results.subscribe(pumpSubscriberProvider.get().with(job, pump));
+        Subscription subscription = results.subscribe(pumpSubscriberFactory.create(job, pump));
         job.setPumpSubscription(subscription);
     }
 }

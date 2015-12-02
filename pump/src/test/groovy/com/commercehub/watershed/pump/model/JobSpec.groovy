@@ -1,16 +1,19 @@
 package com.commercehub.watershed.pump.model
 
+import com.commercehub.watershed.pump.service.TimeService
 import org.joda.time.Instant
 import spock.lang.Specification
 
 class JobSpec extends Specification{
 
     Job job
+    TimeService timeService
     String jobId = UUID.randomUUID().toString()
     PumpSettings pumpSettings = new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream")
 
     def setup(){
-        job = new Job(null, jobId, pumpSettings)
+        timeService = Mock(TimeService)
+        job = new Job(timeService, jobId, pumpSettings)
     }
 
     def "getElapsedTime: elapsedTime is 0 if both start and completion times don't exist"(){
@@ -28,6 +31,8 @@ class JobSpec extends Specification{
 
     def "getElapsedTime: completionTime is null, startTime is not, use current system time"(){
         setup:
+        timeService.currentTimeMillis() >> Instant.parse("2015-11-23T15:12:55.100Z").toDateTime().getMillis()
+
         job.setCompletionTime(null)
         job.setStartTime(Instant.parse("2015-11-23T15:12:55.000Z").toDateTime())
 
@@ -35,7 +40,7 @@ class JobSpec extends Specification{
         Long elapsedTime = job.getElapsedTime()
 
         then:
-        elapsedTime > 0
+        elapsedTime == 100L
     }
 
     def "getElapsedTime: completionTime is set, startTime is set"(){

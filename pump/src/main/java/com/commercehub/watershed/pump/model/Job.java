@@ -113,7 +113,7 @@ public class Job {
 
     public Long getElapsedTime() {
         if(completionTime == null){
-            return startTime != null? System.currentTimeMillis() - startTime.getMillis() : 0L;
+            return startTime != null? timeService.currentTimeMillis() - startTime.getMillis() : 0L;
         }
 
         return completionTime.getMillis() - startTime.getMillis();

@@ -53,7 +53,7 @@ public class PumpGuiceModule extends AbstractModule {
         objectMapper = configureObjectMapper();
         bind(JobService.class).to(JobServiceImpl.class);
         bind(QueryableRepository.class).to(DrillRepository.class);
-        bind(TransformerFunctionService.class).to(TransformerFunctionServiceImpl.class);
+        bind(TransformerFunctionFactory.class).to(TransformerFunctionFactoryImpl.class);
         bind(KinesisService.class).to(KinesisServiceImpl.class);
     }
 
@@ -104,8 +104,8 @@ public class PumpGuiceModule extends AbstractModule {
 
 
     @Provides
-    private JobRunnable jobRunnableProvider(TransformerFunctionService transformerFunctionService, Provider<Pump> pumpProvider, Provider<PumpSubscriber> pumpSubscriber){
-        return new JobRunnable(transformerFunctionService, pumpProvider, pumpSubscriber);
+    private JobRunnable jobRunnableProvider(TransformerFunctionFactory transformerFunctionFactory, Provider<Pump> pumpProvider, Provider<PumpSubscriber> pumpSubscriber){
+        return new JobRunnable(transformerFunctionFactory, pumpProvider, pumpSubscriber);
     }
 
     @Provides

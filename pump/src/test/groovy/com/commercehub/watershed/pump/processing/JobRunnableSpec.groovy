@@ -3,9 +3,8 @@ package com.commercehub.watershed.pump.processing
 import com.amazonaws.services.kinesis.producer.UserRecordResult
 import com.commercehub.watershed.pump.model.Job
 import com.commercehub.watershed.pump.model.PumpSettings
-import com.commercehub.watershed.pump.service.TransformerService
+import com.commercehub.watershed.pump.service.TransformerFunctionService
 import com.google.common.base.Function
-import com.google.common.base.Optional
 import com.google.inject.Provider
 import rx.Observable
 import spock.lang.Specification
@@ -16,7 +15,7 @@ public class JobRunnableSpec extends Specification {
     Job job
     Pump pump
     PumpSubscriber pumpSubscriber
-    TransformerService transformerService
+    TransformerFunctionService transformerFunctionService
     Provider<Pump> pumpProvider
     Provider<PumpSubscriber> pumpSubscriberProvider
     Observable<UserRecordResult> UserRecordResultObservable
@@ -27,17 +26,17 @@ public class JobRunnableSpec extends Specification {
         job = Mock(Job)
         pump = Mock(Pump)
         pumpSubscriber = Mock(PumpSubscriber)
-        transformerService = Mock(TransformerService)
+        transformerFunctionService = Mock(TransformerFunctionService)
         pumpProvider = Mock(Provider)
         pumpSubscriberProvider = Mock(Provider)
         onSubscribe = Mock(Observable.OnSubscribe)
         UserRecordResultObservable = new Observable<UserRecordResult>(onSubscribe)
 
-        jobRunnable = new JobRunnable(transformerService, pumpProvider, pumpSubscriberProvider)
+        jobRunnable = new JobRunnable(transformerFunctionService, pumpProvider, pumpSubscriberProvider)
         jobRunnable.with(job)
 
         job.getPumpSettings() >> new PumpSettings()
-        transformerService.addReplayFlags(_, _) >> Mock(Function)
+        transformerFunctionService.addReplayFlags(_, _) >> Mock(Function)
     }
 
     def "run creates a Pump, calls build(), and subscribes to it"(){

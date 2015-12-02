@@ -10,7 +10,7 @@ class JobSpec extends Specification{
     PumpSettings pumpSettings = new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream")
 
     def setup(){
-        job = new Job(jobId, pumpSettings)
+        job = new Job(null, jobId, pumpSettings)
     }
 
     def "getElapsedTime: elapsedTime is 0 if both start and completion times don't exist"(){

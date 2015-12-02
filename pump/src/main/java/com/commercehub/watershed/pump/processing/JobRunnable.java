@@ -6,7 +6,9 @@ import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactor
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.TransformerFunctionFactory;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.assistedinject.Assisted;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -22,19 +24,17 @@ public class JobRunnable implements Runnable {
     private PumpFactory pumpFactory;
     private PumpSubscriberFactory pumpSubscriberFactory;
 
+    @Inject
     public JobRunnable(
             TransformerFunctionFactory transformerFunctionFactory,
             PumpFactory pumpFactory,
-            PumpSubscriberFactory pumpSubscriberFactory){
+            PumpSubscriberFactory pumpSubscriberFactory,
+            @Assisted Job job){
 
         this.transformerFunctionFactory = transformerFunctionFactory;
         this.pumpFactory = pumpFactory;
         this.pumpSubscriberFactory = pumpSubscriberFactory;
-    }
-
-    public JobRunnable with(Job job){
         this.job = job;
-        return this;
     }
 
     public void run(){

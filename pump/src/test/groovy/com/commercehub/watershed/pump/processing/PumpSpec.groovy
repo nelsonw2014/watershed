@@ -48,7 +48,7 @@ public class PumpSpec extends Specification {
         setupPumpSettings()
         setupKinesis()
 
-        pump = new Pump(connection, kinesisProducer, kinesisService, 5, 1).with(pumpSettings)
+        pump = new Pump(connection, kinesisProducer, kinesisService, 5, 1, pumpSettings, null)
 
         testSubscriber = TestSubscriber.create(1)
         results = pump.build()
@@ -159,7 +159,7 @@ public class PumpSpec extends Specification {
 
     def "records transformed if transformer provided"(){
         setup:
-        pump.with(recordTransformer)
+        pump = new Pump(connection, kinesisProducer, kinesisService, 5, 1, pumpSettings, recordTransformer)
         results = pump.build()
 
         when:

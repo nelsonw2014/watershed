@@ -7,6 +7,7 @@ import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.commercehub.watershed.pump.application.factories.JobFactory;
+import com.commercehub.watershed.pump.application.factories.JobRunnableFactory;
 import com.commercehub.watershed.pump.application.factories.PumpFactory;
 import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
 import com.commercehub.watershed.pump.model.Job;
@@ -65,6 +66,7 @@ public class PumpGuiceModule extends AbstractModule {
         install(new FactoryModuleBuilder().implement(Job.class, Job.class).build(JobFactory.class));
         install(new FactoryModuleBuilder().implement(Pump.class, Pump.class).build(PumpFactory.class));
         install(new FactoryModuleBuilder().implement(PumpSubscriber.class, PumpSubscriber.class).build(PumpSubscriberFactory.class));
+        install(new FactoryModuleBuilder().implement(JobRunnable.class, JobRunnable.class).build(JobRunnableFactory.class));
     }
 
     @Provides
@@ -110,17 +112,6 @@ public class PumpGuiceModule extends AbstractModule {
         }
 
         return properties;
-    }
-
-
-    @Provides
-    private JobRunnable jobRunnableProvider(TransformerFunctionFactory transformerFunctionFactory, PumpFactory pumpFactory, PumpSubscriberFactory pumpSubscriberFactory){
-        return new JobRunnable(transformerFunctionFactory, pumpFactory, pumpSubscriberFactory);
-    }
-
-    @Provides
-    private PumpSubscriber pumpSubscriberProvider(@Named("numRecordsPerChunk") int numRecordsPerChunk){
-        return new PumpSubscriber(numRecordsPerChunk);
     }
 
     @Provides

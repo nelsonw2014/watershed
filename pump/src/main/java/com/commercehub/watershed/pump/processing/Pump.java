@@ -48,13 +48,13 @@ public class Pump {
      */
     @Inject
     public Pump(
-            @Assisted Connection connection,
-            @Assisted KinesisProducer kinesisProducer,
-            @Assisted KinesisService kinesisService,
-            @Assisted("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond,
-            @Assisted("producerRateLimit") int producerRateLimit,
-            PumpSettings pumpSettings,
-            Function<byte[], byte[]> recordTransformer) {
+            Connection connection,
+            KinesisProducer kinesisProducer,
+            KinesisService kinesisService,
+            @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond,
+            @Named("producerRateLimit") int producerRateLimit,
+            @Assisted PumpSettings pumpSettings,
+            @Assisted Function<byte[], byte[]> recordTransformer) {
 
         this.connection = connection;
         this.kinesisProducer = kinesisProducer;

@@ -38,9 +38,9 @@ public class Job {
 
     @Inject
     public Job(
-            @Assisted TimeService timeService,
-            String jobId,
-            PumpSettings pumpSettings){
+            TimeService timeService,
+            @Assisted String jobId,
+            @Assisted PumpSettings pumpSettings){
         this.timeService = timeService;
         this.jobId = jobId;
         this.pumpSettings = pumpSettings;

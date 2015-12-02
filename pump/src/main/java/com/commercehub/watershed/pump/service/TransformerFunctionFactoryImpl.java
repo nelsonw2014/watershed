@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 
-public class TransformerFunctionServiceImpl implements TransformerFunctionService {
-    private static final Logger log = LoggerFactory.getLogger(TransformerFunctionServiceImpl.class);
+public class TransformerFunctionFactoryImpl implements TransformerFunctionFactory {
+    private static final Logger log = LoggerFactory.getLogger(TransformerFunctionFactoryImpl.class);
 
     @Inject
     private ObjectMapper objectMapper;
@@ -24,7 +24,7 @@ public class TransformerFunctionServiceImpl implements TransformerFunctionServic
      * @param overwriteEnabled
      * @return Function
      */
-    public Function<byte[], byte[]> addReplayFlags(Boolean replayEnabled, Boolean overwriteEnabled) {
+    public Function<byte[], byte[]> getReplayFlagTransformFunction(Boolean replayEnabled, Boolean overwriteEnabled) {
         final BooleanNode replayEnabledNode = replayEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
         final BooleanNode overwriteEnabledNode = overwriteEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
 

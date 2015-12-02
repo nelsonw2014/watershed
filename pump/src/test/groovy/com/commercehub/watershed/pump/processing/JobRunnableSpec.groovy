@@ -1,9 +1,11 @@
 package com.commercehub.watershed.pump.processing
 
 import com.amazonaws.services.kinesis.producer.UserRecordResult
+import com.commercehub.watershed.pump.application.factories.PumpFactory
+import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory
 import com.commercehub.watershed.pump.model.Job
 import com.commercehub.watershed.pump.model.PumpSettings
-import com.commercehub.watershed.pump.service.TransformerFunctionService
+import com.commercehub.watershed.pump.service.TransformerFunctionFactory
 import com.google.common.base.Function
 import com.google.inject.Provider
 import rx.Observable
@@ -15,9 +17,9 @@ public class JobRunnableSpec extends Specification {
     Job job
     Pump pump
     PumpSubscriber pumpSubscriber
-    TransformerFunctionService transformerFunctionService
-    Provider<Pump> pumpProvider
-    Provider<PumpSubscriber> pumpSubscriberProvider
+    TransformerFunctionFactory transformerFunctionFactory
+    PumpFactory pumpFactory
+    PumpSubscriberFactory pumpSubscriberFactory
     Observable<UserRecordResult> UserRecordResultObservable
     Observable.OnSubscribe onSubscribe
 
@@ -26,17 +28,16 @@ public class JobRunnableSpec extends Specification {
         job = Mock(Job)
         pump = Mock(Pump)
         pumpSubscriber = Mock(PumpSubscriber)
-        transformerFunctionService = Mock(TransformerFunctionService)
-        pumpProvider = Mock(Provider)
-        pumpSubscriberProvider = Mock(Provider)
+        transformerFunctionFactory = Mock(TransformerFunctionFactory)
+        pumpFactory = Mock(PumpFactory)
+        pumpSubscriberFactory = Mock(PumpSubscriberFactory)
         onSubscribe = Mock(Observable.OnSubscribe)
         UserRecordResultObservable = new Observable<UserRecordResult>(onSubscribe)
 
-        jobRunnable = new JobRunnable(transformerFunctionService, pumpProvider, pumpSubscriberProvider)
-        jobRunnable.with(job)
+        jobRunnable = new JobRunnable(transformerFunctionFactory, pumpFactory, pumpSubscriberFactory, job)
 
         job.getPumpSettings() >> new PumpSettings()
-        transformerFunctionService.addReplayFlags(_, _) >> Mock(Function)
+        transformerFunctionFactory.getReplayFlagTransformFunction(_, _) >> Mock(Function)
     }
 
     def "run creates a Pump, calls build(), and subscribes to it"(){
@@ -44,16 +45,13 @@ public class JobRunnableSpec extends Specification {
         jobRunnable.run()
 
         then:
-        1 * pumpProvider.get() >> pump
-        1 * pump.with(_ as Function<byte[], byte[]>) >> pump
-        1 * pump.with(_ as PumpSettings) >> pump
+        1 * pumpFactory.create(_ as PumpSettings, _ as Function<byte[], byte[]>) >> pump
 
         then:
         1 * pump.build() >> UserRecordResultObservable
 
         then:
-        1 * pumpSubscriberProvider.get() >> pumpSubscriber
-        1 * pumpSubscriber.with(_ as Job, _ as Pump) >> pumpSubscriber
+        1 * pumpSubscriberFactory.create(_ as Job, _ as Pump) >> pumpSubscriber
 
         then:
         1 * onSubscribe.call(_)
@@ -62,16 +60,16 @@ public class JobRunnableSpec extends Specification {
 
     def "jobRunnable doesn't run without a job"(){
         setup:
-        jobRunnable.with(null)
+        jobRunnable.job = null
 
         when:
         jobRunnable.run()
 
         then:
         thrown(IllegalStateException)
-        0 * pumpProvider.get()
+        0 * pumpFactory.create(_, _)
         0 * pump.build()
-        0 * pumpSubscriberProvider.get()
+        0 * pumpSubscriberFactory.create(_, _)
         0 * pumpSubscriber.onStart()
     }
 

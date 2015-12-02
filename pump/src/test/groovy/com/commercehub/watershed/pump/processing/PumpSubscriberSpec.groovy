@@ -17,11 +17,10 @@ public class PumpSubscriberSpec extends Specification {
     UserRecordResult userRecordResult
 
     def setup(){
-        job = new Job("test", new PumpSettings())
+        job = new Job(null, "test", new PumpSettings())
         pump = Mock(Pump)
         producer = Mock(Producer)
-        pumpSubscriber = new PumpSubscriber(5)
-        pumpSubscriber.with(job, pump)
+        pumpSubscriber = new PumpSubscriber(job, pump, 5)
         pumpSubscriber.setProducer(producer)
 
         userRecordResult = Mock(UserRecordResult)
@@ -48,7 +47,7 @@ public class PumpSubscriberSpec extends Specification {
 
     def "onStart still kick off requests with null job"(){
         when:
-        pumpSubscriber.with(null, pump)
+        pumpSubscriber.job = null
         pumpSubscriber.onStart()
 
         then:
@@ -71,7 +70,7 @@ public class PumpSubscriberSpec extends Specification {
 
     def "onCompleted doesn't shut down pump if its null"(){
         when:
-        pumpSubscriber.with(job, null)
+        pumpSubscriber.pump = null
         pumpSubscriber.onCompleted()
 
         then:
@@ -93,7 +92,7 @@ public class PumpSubscriberSpec extends Specification {
 
     def "onCompleted doesn't wrap up job if its null"(){
         when:
-        pumpSubscriber.with(null, pump)
+        pumpSubscriber.job = null
         pumpSubscriber.onCompleted()
 
         then:
@@ -119,7 +118,7 @@ public class PumpSubscriberSpec extends Specification {
 
     def "updateStats doesn't update job if job is null"(){
         when:
-        pumpSubscriber.with(null, pump)
+        pumpSubscriber.job = null
         pumpSubscriber.updateStats()
 
         then:
@@ -134,9 +133,9 @@ public class PumpSubscriberSpec extends Specification {
 
     def "updateStats doesn't update pending stat if pump is null"(){
         when:
+        pumpSubscriber.pump = null
         pumpSubscriber.failCount = new AtomicLong(1L)
         pumpSubscriber.successCount = new AtomicLong(5L)
-        pumpSubscriber.with(job, null)
         pumpSubscriber.updateStats()
 
         then:
@@ -164,7 +163,7 @@ public class PumpSubscriberSpec extends Specification {
 
     def "onError still wraps up job if pump is null"(){
         when:
-        pumpSubscriber.with(job, null)
+        pumpSubscriber.pump = null
         Exception ex = new Exception("error")
         pumpSubscriber.onError(ex)
 
@@ -181,7 +180,7 @@ public class PumpSubscriberSpec extends Specification {
 
     def "onError still destroys pump if job is null"(){
         when:
-        pumpSubscriber.with(null, pump)
+        pumpSubscriber.job = null
         Exception ex = new Exception("error")
         pumpSubscriber.onError(ex)
 

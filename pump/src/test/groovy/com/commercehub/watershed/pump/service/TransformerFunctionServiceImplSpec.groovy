@@ -25,7 +25,7 @@ class TransformerFunctionServiceImplSpec extends Specification {
         String expectedOutputJson = String.format("""{"foo": 1, "bar": "two", "replay": %b, "overwrite": %b}""", replayEnabled, overwriteEnabled)
 
         when:
-        String outputJson = new String(transformerFunctionServiceService.addReplayFlags(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
+        String outputJson = new String(transformerFunctionServiceService.getReplayFlagTransformFunction(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
 
         then:
         JSONAssert.assertEquals(expectedOutputJson, outputJson, JSONCompareMode.STRICT)
@@ -44,7 +44,7 @@ class TransformerFunctionServiceImplSpec extends Specification {
         String expectedOutputJson = String.format("""{"foo": 1, "bar": "two", "replay": %b, "overwrite": %b}""", replayEnabled, overwriteEnabled)
 
         when:
-        String outputJson = new String(transformerFunctionServiceService.addReplayFlags(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
+        String outputJson = new String(transformerFunctionServiceService.getReplayFlagTransformFunction(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
 
         then:
         JSONAssert.assertEquals(expectedOutputJson, outputJson, JSONCompareMode.STRICT)

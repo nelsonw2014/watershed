@@ -36,7 +36,7 @@ public class JobRunnableSpec extends Specification {
         jobRunnable.with(job)
 
         job.getPumpSettings() >> new PumpSettings()
-        transformerFunctionService.addReplayFlags(_, _) >> Mock(Function)
+        transformerFunctionService.getReplayFlagTransformFunction(_, _) >> Mock(Function)
     }
 
     def "run creates a Pump, calls build(), and subscribes to it"(){

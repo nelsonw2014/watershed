@@ -19,7 +19,7 @@ public class TransformerFunctionServiceImpl implements TransformerFunctionServic
     private ObjectMapper objectMapper;
 
 
-    public Function<byte[], byte[]> addReplayFlags(Boolean replayEnabled, Boolean overwriteEnabled) {
+    public Function<byte[], byte[]> getReplayFlagTransformFunction(Boolean replayEnabled, Boolean overwriteEnabled) {
         final BooleanNode replayEnabledNode = replayEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
         final BooleanNode overwriteEnabledNode = overwriteEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
 

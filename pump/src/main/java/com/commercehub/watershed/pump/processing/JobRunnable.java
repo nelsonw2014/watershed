@@ -42,7 +42,7 @@ public class JobRunnable implements Runnable {
         PumpSettings pumpSettings = job.getPumpSettings();
         final Pump pump = pumpProvider.get()
                 .with(pumpSettings)
-                .with(transformerFunctionService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
+                .with(transformerFunctionService.getReplayFlagTransformFunction(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override

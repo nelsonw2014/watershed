@@ -14,6 +14,7 @@
 
 import requests
 import json
+import time
 
 class PumpClient:    
     def __init__(self, base_url):
@@ -31,7 +32,7 @@ class PumpClient:
             print(e)
 
         for job in jobs:
-            print_job(job, summary_only)
+            self.print_job(job, summary_only)
         return
 
 
@@ -55,17 +56,17 @@ class PumpClient:
             if("jobId" not in job):
                 raise Exception('Invalid job.')
 
-            print_job(job, summary_only)
+            self.print_job(job, summary_only)
 
             if(not poll_for_progress or job["stage"] == "COMPLETED_ERROR" or job["stage"] == "COMPLETED_SUCCESS"):
                 break
 
-            sleep(1)
+            time.sleep(1)
 
         return
 
 
-    def print_job(job, summary_only):
+    def print_job(self, job, summary_only):
         if(summary_only):        
             print('{jobId}: {stage}({elapsedTime}, {meanRate}) {successCount} successful, {failureCount} failed, {pendingCount} pending'.format(
                     jobId=job["jobId"],
@@ -98,13 +99,13 @@ class PumpClient:
             raise
 
         if(not poll_for_progress):
-            print(job)
+            self.print_job(job, True)
             return
 
         if(not 'jobId' in job):
             return
 
-        get_job(job.jobId, poll_for_progress, True)
+        self.get_job(job['jobId'], poll_for_progress, True)
         return
 
     def preview_job(self, query_in, num_records):

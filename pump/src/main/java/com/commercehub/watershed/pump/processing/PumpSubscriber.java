@@ -3,6 +3,9 @@ package com.commercehub.watershed.pump.processing;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.joda.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,14 +25,15 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
     private Job job;
     private Pump pump;
 
-    public PumpSubscriber(int numRecordsPerChunk){
-        this.numRecordsPerChunk = numRecordsPerChunk;
-    }
+    @Inject
+    public PumpSubscriber(
+            @Assisted Job job,
+            @Assisted Pump pump,
+            @Named("numRecordsPerChunk") int numRecordsPerChunk){
 
-    public PumpSubscriber with(Job job, Pump pump){
         this.job = job;
         this.pump = pump;
-        return this;
+        this.numRecordsPerChunk = numRecordsPerChunk;
     }
 
     @Override

@@ -7,6 +7,8 @@ import com.commercehub.watershed.pump.model.JobPreview
 import com.commercehub.watershed.pump.model.PreviewSettings
 import com.commercehub.watershed.pump.model.PumpSettings
 import com.commercehub.watershed.pump.service.JobService
+import com.commercehub.watershed.pump.service.SystemTimeService
+import com.commercehub.watershed.pump.service.TimeService
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Guice
 import io.dropwizard.testing.junit.ResourceTestRule
@@ -21,14 +23,10 @@ import javax.ws.rs.core.Response
 
 
 class PumpResourceSpec extends Specification {
-    @Shared
     JobService jobService
-
-    @Shared
     PumpResource pumpResource = new PumpResource()
-
-    @Shared
     ObjectMapper objectMapper
+    TimeService timeService
 
     @Rule
     ResourceTestRule resources = new ResourceTestRule.Builder()
@@ -40,6 +38,7 @@ class PumpResourceSpec extends Specification {
         objectMapper = GuiceBridge.getInjector().getInstance(ObjectMapper)
 
         jobService = Mock(JobService)
+        timeService = new SystemTimeService()
         pumpResource.jobService = jobService
         pumpResource.objectMapper = objectMapper
     }
@@ -113,7 +112,7 @@ class PumpResourceSpec extends Specification {
                 .post(Entity.entity(pumpSettingsJSON, MediaType.APPLICATION_JSON))
 
         then:
-        1 * jobService.enqueueJob(pumpSettings) >> new Job(UUID.randomUUID().toString(), pumpSettings)
+        1 * jobService.enqueueJob(pumpSettings) >> new Job(timeService, UUID.randomUUID().toString(), pumpSettings)
         response.status == 200
     }
 
@@ -156,7 +155,7 @@ class PumpResourceSpec extends Specification {
     def "GET /jobs/{job_id} is successful"(){
         setup:
         String jobId = UUID.randomUUID().toString()
-        Job job = new Job(jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
+        Job job = new Job(timeService, jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
 
         when:
         Response response = resources.jerseyTest.client()
@@ -195,7 +194,7 @@ class PumpResourceSpec extends Specification {
     def "GET /jobs is successful"(){
         setup:
         String jobId = UUID.randomUUID().toString()
-        Job job = new Job(jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
+        Job job = new Job(timeService, jobId, new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream"))
 
         when:
         Response response = resources.jerseyTest.client()

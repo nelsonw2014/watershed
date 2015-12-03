@@ -1,10 +1,15 @@
 package com.commercehub.watershed.pump.processing;
 
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.commercehub.watershed.pump.application.factories.PumpFactory;
+import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
 import com.commercehub.watershed.pump.model.Job;
+import com.commercehub.watershed.pump.model.ProcessingStage;
 import com.commercehub.watershed.pump.model.PumpSettings;
-import com.commercehub.watershed.pump.service.TransformerService;
+import com.commercehub.watershed.pump.service.TransformerFunctionFactory;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.assistedinject.Assisted;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -15,23 +20,22 @@ public class JobRunnable implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(JobRunnable.class);
 
     private Job job;
-    private TransformerService transformerService;
-    private Provider<Pump> pumpProvider;
-    private Provider<PumpSubscriber> pumpSubscriberProvider;
+    private TransformerFunctionFactory transformerFunctionFactory;
 
+    private PumpFactory pumpFactory;
+    private PumpSubscriberFactory pumpSubscriberFactory;
+
+    @Inject
     public JobRunnable(
-            TransformerService transformerService,
-            Provider<Pump> pumpProvider,
-            Provider<PumpSubscriber> pumpSubscriberProvider){
+            TransformerFunctionFactory transformerFunctionFactory,
+            PumpFactory pumpFactory,
+            PumpSubscriberFactory pumpSubscriberFactory,
+            @Assisted Job job){
 
-        this.transformerService = transformerService;
-        this.pumpProvider = pumpProvider;
-        this.pumpSubscriberProvider = pumpSubscriberProvider;
-    }
-
-    public JobRunnable with(Job job){
+        this.transformerFunctionFactory = transformerFunctionFactory;
+        this.pumpFactory = pumpFactory;
+        this.pumpSubscriberFactory = pumpSubscriberFactory;
         this.job = job;
-        return this;
     }
 
     public void run(){
@@ -39,10 +43,14 @@ public class JobRunnable implements Runnable {
             throw new IllegalStateException("Job cannot be null.");
         }
 
+        if(job.getStage() != ProcessingStage.NOT_STARTED){
+            throw new IllegalStateException("Job already running or completed.");
+        }
+
         PumpSettings pumpSettings = job.getPumpSettings();
-        final Pump pump = pumpProvider.get()
-                .with(pumpSettings)
-                .with(transformerService.addReplayFlags(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
+        final Pump pump = pumpFactory.create(
+                pumpSettings,
+                transformerFunctionFactory.getReplayFlagTransformFunction(pumpSettings.getHasReplayFlag(), pumpSettings.getHasOverwriteFlag()));
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -53,7 +61,7 @@ public class JobRunnable implements Runnable {
         }, "KPL shutdown hook"));
 
         Observable<UserRecordResult> results = pump.build();
-        Subscription subscription = results.subscribe(pumpSubscriberProvider.get().with(job, pump));
+        Subscription subscription = results.subscribe(pumpSubscriberFactory.create(job, pump));
         job.setPumpSubscription(subscription);
     }
 }

@@ -1,12 +1,13 @@
 package com.commercehub.watershed.pump.service
 
+import com.commercehub.watershed.pump.application.factories.JobFactory
+import com.commercehub.watershed.pump.application.factories.JobRunnableFactory
 import com.commercehub.watershed.pump.model.Job
 import com.commercehub.watershed.pump.model.JobPreview
 import com.commercehub.watershed.pump.model.PreviewSettings
 import com.commercehub.watershed.pump.model.PumpSettings
 import com.commercehub.watershed.pump.processing.JobRunnable
 import com.commercehub.watershed.pump.respositories.QueryableRepository
-import com.google.inject.Provider
 import spock.lang.Specification
 
 import java.util.concurrent.ExecutorService
@@ -15,35 +16,40 @@ class JobServiceImplSpec extends Specification {
 
     JobService jobService
     Map<String, Job> jobMap
-    Provider<JobRunnable> jobRunnableProvider
+    JobRunnableFactory jobRunnableFactory
     ExecutorService executor
     QueryableRepository repository
     JobRunnable jobRunnable
+    JobFactory jobFactory
 
     PumpSettings pumpSettings = new PumpSettings(queryIn: "select * from foo", streamOut: "MyStream")
     PreviewSettings previewSettings = new PreviewSettings(queryIn: "select * from foo", previewCount: 3)
 
     def setup() {
         jobMap = new HashMap<>()
-        jobRunnableProvider = Mock(Provider)
+        jobRunnableFactory = Mock(JobRunnableFactory)
+        jobFactory = Mock(JobFactory)
         executor = Mock(ExecutorService)
         repository = Mock(QueryableRepository)
         jobRunnable = Mock(JobRunnable)
 
         jobService = new JobServiceImpl(
                 jobMap: jobMap,
-                jobRunnableProvider: jobRunnableProvider,
+                jobRunnableFactory: jobRunnableFactory,
+                jobFactory: jobFactory,
                 executor: executor,
                 repository: repository)
     }
 
     def "enqueueJob queues a job with the executor and adds it to the map"(){
+        setup:
+        jobFactory.create(_, _) >> new Job(null, UUID.randomUUID().toString(), pumpSettings)
+
         when:
         Job job = jobService.enqueueJob(pumpSettings)
 
         then:
-        1 * jobRunnableProvider.get() >> jobRunnable
-        1 * jobRunnable.with(_ as Job) >> jobRunnable
+        1 * jobRunnableFactory.create(_ as Job) >> jobRunnable
         1 * executor.submit(_ as JobRunnable)
         jobMap.size() == 1
         jobMap.get(job.jobId) == job
@@ -53,7 +59,7 @@ class JobServiceImplSpec extends Specification {
     def "getJob returns job from jobMap"(){
         setup:
         String jobId = UUID.randomUUID().toString()
-        jobMap.put(jobId, new Job(jobId, pumpSettings))
+        jobMap.put(jobId, new Job(null, jobId, pumpSettings))
 
         when:
         Job job = jobService.getJob(jobId)
@@ -76,7 +82,7 @@ class JobServiceImplSpec extends Specification {
     def "getAllJobs returns jobMap values"(){
         setup:
         String jobId = UUID.randomUUID().toString()
-        jobMap.put(jobId, new Job(jobId, pumpSettings))
+        jobMap.put(jobId, new Job(null, jobId, pumpSettings))
 
         when:
         Collection<Job> jobs = jobService.getAllJobs()

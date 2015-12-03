@@ -8,15 +8,15 @@ import org.skyscreamer.jsonassert.JSONAssert
 import org.skyscreamer.jsonassert.JSONCompareMode
 import spock.lang.Specification
 
-class TransformerServiceImplSpec extends Specification {
+class TransformerFunctionFactoryImplSpec extends Specification {
 
-    TransformerService transformerService
+    TransformerFunctionFactory transformerFunctionFactory
 
     def setup() {
         GuiceBridge.setOverrideInjector(Guice.createInjector(new PumpGuiceModule()))
         ObjectMapper objectMapper = GuiceBridge.getInjector().getInstance(ObjectMapper)
 
-        transformerService = new TransformerServiceImpl(objectMapper: objectMapper)
+        transformerFunctionFactory = new TransformerFunctionFactoryImpl(objectMapper: objectMapper)
     }
 
     def "replay flags added correctly when not present"(Boolean replayEnabled, Boolean overwriteEnabled) {
@@ -25,7 +25,7 @@ class TransformerServiceImplSpec extends Specification {
         String expectedOutputJson = String.format("""{"foo": 1, "bar": "two", "replay": %b, "overwrite": %b}""", replayEnabled, overwriteEnabled)
 
         when:
-        String outputJson = new String(transformerService.addReplayFlags(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
+        String outputJson = new String(transformerFunctionFactory.getReplayFlagTransformFunction(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
 
         then:
         JSONAssert.assertEquals(expectedOutputJson, outputJson, JSONCompareMode.STRICT)
@@ -44,7 +44,7 @@ class TransformerServiceImplSpec extends Specification {
         String expectedOutputJson = String.format("""{"foo": 1, "bar": "two", "replay": %b, "overwrite": %b}""", replayEnabled, overwriteEnabled)
 
         when:
-        String outputJson = new String(transformerService.addReplayFlags(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
+        String outputJson = new String(transformerFunctionFactory.getReplayFlagTransformFunction(replayEnabled, overwriteEnabled).apply(inputJson.getBytes("UTF-8")), "UTF-8")
 
         then:
         JSONAssert.assertEquals(expectedOutputJson, outputJson, JSONCompareMode.STRICT)

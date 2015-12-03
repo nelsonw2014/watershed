@@ -46,6 +46,7 @@ dependencies {
             "io.reactivex:rxjava-guava:1.0.2",
             "com.fasterxml.jackson.core:jackson-databind:2.3.2",
             "com.google.inject:guice:4.0",
+            'com.google.inject.extensions:guice-assistedinject:4.0',
             "com.hubspot.dropwizard:dropwizard-guice:0.8.3.0",
             "io.dropwizard:dropwizard-core:${dropwizardVersion}"
     )

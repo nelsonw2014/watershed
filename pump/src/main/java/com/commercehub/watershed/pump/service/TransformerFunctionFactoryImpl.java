@@ -12,14 +12,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 
-public class TransformerServiceImpl implements TransformerService {
-    private static final Logger log = LoggerFactory.getLogger(TransformerServiceImpl.class);
+public class TransformerFunctionFactoryImpl implements TransformerFunctionFactory {
+    private static final Logger log = LoggerFactory.getLogger(TransformerFunctionFactoryImpl.class);
 
     @Inject
     private ObjectMapper objectMapper;
 
 
-    public Function<byte[], byte[]> addReplayFlags(Boolean replayEnabled, Boolean overwriteEnabled) {
+    public Function<byte[], byte[]> getReplayFlagTransformFunction(Boolean replayEnabled, Boolean overwriteEnabled) {
         final BooleanNode replayEnabledNode = replayEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
         final BooleanNode overwriteEnabledNode = overwriteEnabled? BooleanNode.TRUE : BooleanNode.FALSE;
 

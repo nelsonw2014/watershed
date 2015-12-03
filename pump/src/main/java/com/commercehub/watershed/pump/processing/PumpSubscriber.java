@@ -33,13 +33,6 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
             @Assisted Job job,
             @Assisted Pump pump,
             @Named("numRecordsPerChunk") int numRecordsPerChunk){
-
-    /**
-     * Specify which Job and Pump this subscriber is tied to
-     * @param job the Job
-     * @param pump the Pump
-     * @return this
-     */
         this.job = job;
         this.pump = pump;
         this.numRecordsPerChunk = numRecordsPerChunk;

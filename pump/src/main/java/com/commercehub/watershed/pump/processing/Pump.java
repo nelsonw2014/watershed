@@ -45,7 +45,8 @@ public class Pump {
      * @param kinesisProducer               Produces records for Kinesis.
      * @param kinesisService                Communicates with Kinesis to retrieve information about Kinesis streams.
      * @param maxRecordsPerShardPerSecond   The maximum number of records per shard per second that Pump is allowed to handle.
-     * @param producerRateLimit             Limits the maximum allowed put rate for a shard, as a percentage of the backend limits.
+     * @param pumpSettings                  The settings that determine where Pump will look for records and where to send them.
+     * @param recordTransformer             A {@code Function} that will transform records on the byte level.
      */
     @Inject
     public Pump(
@@ -61,17 +62,7 @@ public class Pump {
         this.kinesisProducer = kinesisProducer;
         this.maxRecordsPerShardPerSecond = maxRecordsPerShardPerSecond;
         this.producerRateLimit = producerRateLimit;
-    /**
-     * Include PumpSettings. Pump will not run without this.
-     * @param pumpSettings
-     * @return this
-     */
         this.pumpSettings = pumpSettings;
-    /**
-     * Optionally set a recordTransformer (used to modify the raw data emitted to Kinesis)
-     * @param recordTransformer
-     * @return this
-     */
         this.recordTransformer = recordTransformer;
         this.shardCount = kinesisService.countShardsInStream(pumpSettings.getStreamOut());
     }

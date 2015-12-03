@@ -1,17 +1,14 @@
 package com.commercehub.watershed.pump.processing;
 
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.model.Record;
-import com.amazonaws.services.kinesis.model.StreamDescription;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.PumpSettings;
-import com.github.davidmoten.rx.jdbc.Database;
+import com.commercehub.watershed.pump.service.KinesisService;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
@@ -23,6 +20,7 @@ import rx.schedulers.Schedulers;
 import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * @author pmogren
@@ -32,53 +30,39 @@ public class Pump {
 
     //TODO produce metrics
 
-    private Database database;
+    private Connection connection;
     private int shardCount;
-    private Optional<? extends Function<byte[], byte[]>> recordTransformer;
+    private Function<byte[], byte[]> recordTransformer;
     private KinesisProducer kinesisProducer;
-    private KinesisProducerConfiguration kinesisConfig;
     private PumpSettings pumpSettings;
     private int maxRecordsPerShardPerSecond; //Kinesis service limit, at least prior to aggregation
+    private int producerRateLimit;
 
     /**
-     * @param database          Database configuration.
-     * @param sql               SQL to query for stream records. Must produce result columns labeled {@code rawData}, which
-     *                          will be retrieved as a byte array, and {@code partitionKey}, which will be retrieved as
-     *                          a String.
-     *                          Example: {@code SELECT partitionKey, data FROM storage.workspace.table WHERE processDate > '2015-01-01'}
-     * @param stream            Name of Kinesis stream to which records will be published.
-     * @param kinesisConfig     Kinesis configuration - AWS region, credential provider, buffering, retry, rate limiting, metrics, etc.
-     * @param recordTransformer Optional function to transform a stream record before re-publishing it.
+     *
+     * @param connection                    Database connection.
+     * @param kinesisProducer               Produces records for Kinesis.
+     * @param kinesisService                Communicates with Kinesis to retrieve information about Kinesis streams.
+     * @param maxRecordsPerShardPerSecond   The maximum number of records per shard per second that Pump is allowed to handle.
+     * @param producerRateLimit             Limits the maximum allowed put rate for a shard, as a percentage of the backend limits.
      */
-    public Pump(Database database, KinesisProducerConfiguration kinesisConfig, int maxRecordsPerShardPerSecond) {
-        this.database = database;
-        this.kinesisConfig = kinesisConfig;
-        this.kinesisProducer = new KinesisProducer(kinesisConfig);
+    @Inject
+    public Pump(
+            Connection connection,
+            KinesisProducer kinesisProducer,
+            KinesisService kinesisService,
+            @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond,
+            @Named("producerRateLimit") int producerRateLimit,
+            @Assisted PumpSettings pumpSettings,
+            @Assisted Function<byte[], byte[]> recordTransformer) {
+
+        this.connection = connection;
+        this.kinesisProducer = kinesisProducer;
         this.maxRecordsPerShardPerSecond = maxRecordsPerShardPerSecond;
-    }
-
-    public Pump with(PumpSettings pumpSettings){
+        this.producerRateLimit = producerRateLimit;
         this.pumpSettings = pumpSettings;
-        this.shardCount = countShardsInStream(pumpSettings.getStreamOut(), kinesisConfig);
-        return this;
-    }
-
-    public Pump with(Optional<? extends Function<byte[], byte[]>> recordTransformer){
         this.recordTransformer = recordTransformer;
-        return this;
-    }
-
-    private int countShardsInStream(String stream, KinesisProducerConfiguration kinesisConfig) {
-        AmazonKinesisClient kinesisClient = new AmazonKinesisClient(kinesisConfig.getCredentialsProvider());
-        kinesisClient.setRegion(Region.getRegion(Regions.fromName(kinesisConfig.getRegion())));
-        int numShards = 0;
-        StreamDescription desc = kinesisClient.describeStream(stream).getStreamDescription();
-        int numShardsDescribed = desc.getShards().size();
-        numShards += numShardsDescribed;
-        while (desc.isHasMoreShards()) {
-            desc = kinesisClient.describeStream(stream, desc.getShards().get(numShardsDescribed - 1).getShardId()).getStreamDescription();
-        }
-        return numShards;
+        this.shardCount = kinesisService.countShardsInStream(pumpSettings.getStreamOut());
     }
 
     /**
@@ -88,27 +72,29 @@ public class Pump {
      * to be reported. To cancel pumping, unsubscribe.
      */
     public Observable<UserRecordResult> build() {
+
         // Can't actually use rxjava-jdbc with Drill at the moment: Drill's JDBC client is broken wrt PreparedStatements (DRILL-3566)
         // Also not sure whether rxjava-jdbc supports backpressure.
-//        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
-//            @Override
-//            public Record call(ResultSet resultSet) throws SQLException {
-//                return new Record().withPartitionKey(resultSet.getString("partitionKey")).
-//                        withData(ByteBuffer.wrap(resultSet.getBytes("data")));
-//            }
-//        });
+        /*
+        Observable<Record> dbRecords = database.select(sql).get(new ResultSetMapper<Record>() {
+            @Override
+            public Record call(ResultSet resultSet) throws SQLException {
+                return new Record().withPartitionKey(resultSet.getString("partitionKey")).
+                        withData(ByteBuffer.wrap(resultSet.getBytes("data")));
+            }
+        });
+        */
+
         Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
             @Override
             public void call(final Subscriber<? super Record> subscriber) {
                 subscriber.onStart();
-                final Connection connection = getConnection(subscriber);
-
                 final ResultSet resultSet = executeQuery(subscriber, connection);
 
                 JdbcRecordProducer jdbcRecordProducer = new JdbcRecordProducer(subscriber, resultSet, connection, pumpSettings);
                 subscriber.setProducer(jdbcRecordProducer);
 
-                jdbcRecordProducer.request(shardCount * maxRecordsPerShardPerSecond * kinesisConfig.getRateLimit() / 200);
+                jdbcRecordProducer.request(shardCount * maxRecordsPerShardPerSecond * producerRateLimit / 200);
             }
 
             private ResultSet executeQuery(Subscriber<?> subscriber, Connection connection) {
@@ -118,38 +104,27 @@ public class Pump {
                     resultSet = connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).executeQuery(pumpSettings.getQueryIn());
                     log.info("Got a JDBC ResultSet, streaming results.");
                     resultSet.setFetchSize(Integer.MIN_VALUE);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     resultSet = null;
                     subscriber.onError(e);
                 }
+
                 return resultSet;
             }
-
-            private Connection getConnection(Subscriber<?> s) {
-                Connection c;
-                try {
-                    log.info("Connecting to database...");
-                    c = database.getConnectionProvider().get();
-                } catch (Exception e) {
-                    c = null;
-                    s.onError(e);
-                }
-                return c;
-            }
-
         }).subscribeOn(Schedulers.io());
 
         Observable<Record> transformedRecords;
-        if (recordTransformer.isPresent()) {
-            final Function<byte[], byte[]> transformer = recordTransformer.get();
+        if (recordTransformer != null) {
             transformedRecords = dbRecords.map(new Func1<Record, Record>() {
                 @Override
                 public Record call(Record record) {
                     log.trace("Transforming record");
-                    return record.clone().withData(ByteBuffer.wrap(transformer.apply(record.getData().array())));
+                    return record.clone().withData(ByteBuffer.wrap(recordTransformer.apply(record.getData().array())));
                 }
             });
-        } else {
+        }
+        else {
             transformedRecords = dbRecords;
         }
 
@@ -206,8 +181,8 @@ public class Pump {
                 } else {
                     if (resultSet.next()) {
                         log.trace("Got a JDBC result record");
-                        subscriber.onNext(new Record().withPartitionKey(resultSet.getString(pumpSettings.getPartitionKeyColumn())).
-                                withData(ByteBuffer.wrap(resultSet.getBytes(pumpSettings.getRawDataColumn()))));
+
+                        subscriber.onNext(buildRecord(resultSet, pumpSettings.getPartitionKeyColumn(), pumpSettings.getRawDataColumn()));
                     } else {
                         subscriber.onCompleted();
                         keepGoing = false;
@@ -226,6 +201,14 @@ public class Pump {
             } catch (Exception e) {
                 log.warn("Failed to close database connection.", e);
             }
+        }
+
+        private Record buildRecord(ResultSet resultSet, String partitionKeyColumn, String rawDataColumn) throws SQLException{
+            Record record = new Record();
+            record.withPartitionKey(resultSet.getString(partitionKeyColumn));
+            record.withData(ByteBuffer.wrap(resultSet.getBytes(rawDataColumn)));
+
+            return record;
         }
     }
 }

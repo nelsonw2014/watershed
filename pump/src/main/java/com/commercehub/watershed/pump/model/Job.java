@@ -1,7 +1,9 @@
 package com.commercehub.watershed.pump.model;
 
+import com.commercehub.watershed.pump.service.TimeService;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 import org.joda.time.DateTime;
-import org.joda.time.Instant;
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
@@ -11,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Job {
+    private TimeService timeService;
+
     private String jobId;
     private PumpSettings pumpSettings;
     private List<Throwable> processingErrors;
@@ -26,14 +30,18 @@ public class Job {
     private ProcessingStage stage = ProcessingStage.NOT_STARTED;
 
     private PeriodFormatter formatter = new PeriodFormatterBuilder()
-            .appendHours().appendSuffix(" hours, ")
-            .appendMinutes().appendSuffix(" minutes, ")
-            .appendSeconds().appendSuffix(".")
-            .appendMillis3Digit().appendSuffix(" seconds")
-            .printZeroNever()
+            .printZeroNever().appendHours().appendSuffix(" hour, ", " hours, ")
+            .printZeroNever().appendMinutes().appendSuffix(" minute, ", " minutes, ")
+            .printZeroAlways().appendSeconds().appendSuffix(".")
+            .printZeroAlways().appendMillis3Digit().appendSuffix(" seconds")
             .toFormatter();
 
-    public Job(String jobId, PumpSettings pumpSettings){
+    @Inject
+    public Job(
+            TimeService timeService,
+            @Assisted String jobId,
+            @Assisted PumpSettings pumpSettings){
+        this.timeService = timeService;
         this.jobId = jobId;
         this.pumpSettings = pumpSettings;
         this.processingErrors = new ArrayList<>();
@@ -105,7 +113,7 @@ public class Job {
 
     public Long getElapsedTime() {
         if(completionTime == null){
-            return startTime != null? System.currentTimeMillis() - startTime.getMillis() : 0L;
+            return startTime != null? timeService.currentTimeMillis() - startTime.getMillis() : 0L;
         }
 
         return completionTime.getMillis() - startTime.getMillis();

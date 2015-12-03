@@ -1,21 +1,23 @@
 package com.commercehub.watershed.pump.application;
 
-import com.amazonaws.auth.AWSCredentialsProviderChain;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.kinesis.AmazonKinesisClient;
+import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
+import com.commercehub.watershed.pump.application.factories.JobFactory;
+import com.commercehub.watershed.pump.application.factories.JobRunnableFactory;
+import com.commercehub.watershed.pump.application.factories.PumpFactory;
+import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.processing.IsolatedConnectionProvider;
 import com.commercehub.watershed.pump.processing.JobRunnable;
 import com.commercehub.watershed.pump.processing.Pump;
+import com.commercehub.watershed.pump.processing.PumpSubscriber;
 import com.commercehub.watershed.pump.respositories.DrillRepository;
 import com.commercehub.watershed.pump.respositories.QueryableRepository;
-import com.commercehub.watershed.pump.service.JobService;
-import com.commercehub.watershed.pump.service.JobServiceImpl;
-import com.commercehub.watershed.pump.service.TransformerService;
-import com.commercehub.watershed.pump.service.TransformerServiceImpl;
+import com.commercehub.watershed.pump.service.*;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,12 +29,14 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Names;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Named;
 import java.io.InputStream;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -54,7 +58,15 @@ public class PumpGuiceModule extends AbstractModule {
         objectMapper = configureObjectMapper();
         bind(JobService.class).to(JobServiceImpl.class);
         bind(QueryableRepository.class).to(DrillRepository.class);
-        bind(TransformerService.class).to(TransformerServiceImpl.class);
+        bind(TransformerFunctionFactory.class).to(TransformerFunctionFactoryImpl.class);
+        bind(KinesisService.class).to(KinesisServiceImpl.class);
+        bind(TimeService.class).to(SystemTimeService.class);
+
+        //Assisted Injection https://github.com/google/guice/wiki/AssistedInject
+        install(new FactoryModuleBuilder().implement(Job.class, Job.class).build(JobFactory.class));
+        install(new FactoryModuleBuilder().implement(Pump.class, Pump.class).build(PumpFactory.class));
+        install(new FactoryModuleBuilder().implement(PumpSubscriber.class, PumpSubscriber.class).build(PumpSubscriberFactory.class));
+        install(new FactoryModuleBuilder().implement(JobRunnable.class, JobRunnable.class).build(JobRunnableFactory.class));
     }
 
     @Provides
@@ -102,35 +114,36 @@ public class PumpGuiceModule extends AbstractModule {
         return properties;
     }
 
-
     @Provides
-    private JobRunnable jobRunnableProvider(TransformerService transformerService, Provider<Pump> pumpProvider, @Named("numRecordsPerChunk") int numRecordsPerChunk){
-        return new JobRunnable(transformerService, pumpProvider, numRecordsPerChunk);
+    private KinesisProducer kinesisProducerProvider(KinesisProducerConfiguration kinesisProducerConfiguration){
+        return new KinesisProducer(kinesisProducerConfiguration);
     }
-
-    @Provides
-    private Pump pumpProvider(Database database, KinesisProducerConfiguration kinesisProducerConfiguration, @Named("maxRecordsPerShardPerSecond") int maxRecordsPerShardPerSecond){
-        return new Pump(database, kinesisProducerConfiguration, maxRecordsPerShardPerSecond);
-    }
-
 
     @Provides
     @Singleton
     private KinesisProducerConfiguration configureKinesis(@Named("applicationProperties") Properties properties) {
         KinesisProducerConfiguration kinesisConfig = new KinesisProducerConfiguration();
 
-        kinesisConfig.setAggregationEnabled((boolean) properties.get("kinesisAggregationEnabled"));
+        kinesisConfig.setAggregationEnabled(Boolean.valueOf(properties.get("kinesisAggregationEnabled").toString()));
         kinesisConfig.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
 
         kinesisConfig.setRegion(properties.get("kinesisRegion").toString());
-        kinesisConfig.setRecordTtl((long) properties.get("kinesisRecordTtl"));  //Maybe not the best idea to use MAX_VALUE
+        kinesisConfig.setRecordTtl(Long.valueOf(properties.get("kinesisRecordTtl").toString()));  //Maybe not the best idea to use MAX_VALUE
 
         // Pump works more smoothly when shards are not saturated, so 95% is a good maximum rate.
         // May be lowered further to share capacity with running applications.
-        kinesisConfig.setRateLimit(50);
+        kinesisConfig.setRateLimit(Integer.valueOf(properties.get("producerRateLimit").toString()));
 
         //TODO set more Kinesis Configuration options as appropriate
         return kinesisConfig;
+    }
+
+    @Provides
+    @Singleton
+    private AmazonKinesisClient getKinesisClient(KinesisProducerConfiguration kinesisConfig){
+        AmazonKinesisClient kinesisClient = new AmazonKinesisClient(kinesisConfig.getCredentialsProvider());
+        kinesisClient.setRegion(Region.getRegion(Regions.fromName(kinesisConfig.getRegion())));
+        return kinesisClient;
     }
 
     @Provides
@@ -166,6 +179,11 @@ public class PumpGuiceModule extends AbstractModule {
         }
 
         return database;
+    }
+
+    @Provides
+    private Connection connectionProvider(Database database){
+        return database.getConnectionProvider().get();
     }
 
     @Provides

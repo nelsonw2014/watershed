@@ -2,9 +2,9 @@ package com.commercehub.watershed.pump.processing;
 
 import com.commercehub.watershed.pump.application.factories.PumpFactory;
 import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
-import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
+import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.TransformerFunctionFactory;
 import com.google.inject.Inject;

@@ -1,9 +1,9 @@
 package com.commercehub.watershed.pump.respositories;
 
 
-import com.commercehub.watershed.pump.model.ResultRow;
 import com.commercehub.watershed.pump.model.JobPreview;
 import com.commercehub.watershed.pump.model.PreviewSettings;
+import com.commercehub.watershed.pump.model.ResultRow;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import org.slf4j.Logger;

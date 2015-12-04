@@ -1,8 +1,8 @@
 package com.commercehub.watershed.pump.processing;
 
-import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
+import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.ResultRow;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;

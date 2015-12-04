@@ -1,6 +1,5 @@
 package com.commercehub.watershed.pump.model;
 
-import com.amazonaws.services.kinesis.model.Record;
 import com.commercehub.watershed.pump.service.TimeService;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;

@@ -25,7 +25,9 @@ import rx.observable.ListenableFutureObservable;
 import rx.schedulers.Schedulers;
 
 import java.nio.ByteBuffer;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * @author pmogren

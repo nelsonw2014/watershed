@@ -4,6 +4,7 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult
 import com.commercehub.watershed.pump.application.factories.PumpFactory
 import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory
 import com.commercehub.watershed.pump.model.Job
+import com.commercehub.watershed.pump.model.ProcessingStage
 import com.commercehub.watershed.pump.model.PumpSettings
 import com.commercehub.watershed.pump.service.TransformerFunctionFactory
 import com.google.common.base.Function
@@ -36,7 +37,7 @@ public class JobRunnableSpec extends Specification {
 
         jobRunnable = new JobRunnable(transformerFunctionFactory, pumpFactory, pumpSubscriberFactory, job)
 
-        job.getPumpSettings() >> new PumpSettings()
+        job.getPumpSettings() >> Mock(PumpSettings)
         transformerFunctionFactory.getReplayFlagTransformFunction(_, _) >> Mock(Function)
     }
 
@@ -45,6 +46,7 @@ public class JobRunnableSpec extends Specification {
         jobRunnable.run()
 
         then:
+        1 * job.getStage() >> ProcessingStage.NOT_STARTED
         1 * pumpFactory.create(_ as PumpSettings, _ as Function<byte[], byte[]>) >> pump
 
         then:
@@ -71,6 +73,22 @@ public class JobRunnableSpec extends Specification {
         0 * pump.build()
         0 * pumpSubscriberFactory.create(_, _)
         0 * pumpSubscriber.onStart()
+    }
+
+    def "call jobRunnable.run() with a job thats already in progress"(ProcessingStage processingStage){
+        when:
+        jobRunnable.run()
+
+        then:
+        1 * job.getStage() >> processingStage
+        thrown(IllegalStateException)
+        0 * pumpFactory.create(_, _)
+        0 * pump.build()
+        0 * pumpSubscriberFactory.create(_, _)
+        0 * pumpSubscriber.onStart()
+
+        where:
+        processingStage << [ProcessingStage.IN_PROGRESS, ProcessingStage.COMPLETED_ERROR, ProcessingStage.COMPLETED_SUCCESS]
     }
 
 }

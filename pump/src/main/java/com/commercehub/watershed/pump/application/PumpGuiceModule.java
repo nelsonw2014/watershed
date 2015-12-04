@@ -128,7 +128,7 @@ public class PumpGuiceModule extends AbstractModule {
         kinesisConfig.setCredentialsProvider(new DefaultAWSCredentialsProviderChain());
 
         kinesisConfig.setRegion(properties.get("kinesisRegion").toString());
-        kinesisConfig.setRecordTtl(Long.valueOf(properties.get("kinesisRecordTtl").toString()));  //Maybe not the best idea to use MAX_VALUE
+        kinesisConfig.setRecordTtl(Integer.valueOf(properties.get("kinesisRecordTtl").toString()));  //Maybe not the best idea to use MAX_VALUE
 
         // Pump works more smoothly when shards are not saturated, so 95% is a good maximum rate.
         // May be lowered further to share capacity with running applications.

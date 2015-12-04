@@ -3,9 +3,16 @@ package com.commercehub.watershed.pump.processing;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.commercehub.watershed.pump.model.PumpRecord;
+import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.PumpSettings;
+import com.commercehub.watershed.pump.model.ResultRow;
+import com.commercehub.watershed.pump.respositories.DrillRepository;
 import com.commercehub.watershed.pump.service.KinesisService;
 import com.google.common.base.Function;
+import com.google.common.util.concurrent.AsyncFunction;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
@@ -18,9 +25,7 @@ import rx.observable.ListenableFutureObservable;
 import rx.schedulers.Schedulers;
 
 import java.nio.ByteBuffer;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 /**
  * @author pmogren
@@ -71,7 +76,7 @@ public class Pump {
      * non-recoverable errors by implementing {@code onError}, as well as checking every result for errors if they are
      * to be reported. To cancel pumping, unsubscribe.
      */
-    public Observable<UserRecordResult> build() {
+    public Observable<PumpRecordResult> build() {
 
         // Can't actually use rxjava-jdbc with Drill at the moment: Drill's JDBC client is broken wrt PreparedStatements (DRILL-3566)
         // Also not sure whether rxjava-jdbc supports backpressure.
@@ -85,9 +90,9 @@ public class Pump {
         });
         */
 
-        Observable<Record> dbRecords = Observable.create(new Observable.OnSubscribe<Record>() {
+        Observable<PumpRecord> dbRecords = Observable.create(new Observable.OnSubscribe<PumpRecord>() {
             @Override
-            public void call(final Subscriber<? super Record> subscriber) {
+            public void call(final Subscriber<? super PumpRecord> subscriber) {
                 subscriber.onStart();
                 final ResultSet resultSet = executeQuery(subscriber, connection);
 
@@ -114,13 +119,19 @@ public class Pump {
             }
         }).subscribeOn(Schedulers.io());
 
-        Observable<Record> transformedRecords;
+        Observable<PumpRecord> transformedRecords;
         if (recordTransformer != null) {
-            transformedRecords = dbRecords.map(new Func1<Record, Record>() {
+            transformedRecords = dbRecords.map(new Func1<PumpRecord, PumpRecord>() {
                 @Override
-                public Record call(Record record) {
+                public PumpRecord call(PumpRecord pumpRecord) {
                     log.trace("Transforming record");
-                    return record.clone().withData(ByteBuffer.wrap(recordTransformer.apply(record.getData().array())));
+                    byte[] transformedData = recordTransformer.apply(pumpRecord.getKinesisRecord().getData().array());
+
+                    Record transformedKinesisRecord = pumpRecord.getKinesisRecord()
+                            .clone()
+                            .withData(ByteBuffer.wrap(transformedData));
+
+                    return new PumpRecord(transformedKinesisRecord, pumpRecord.getDrillRow());
                 }
             });
         }
@@ -128,13 +139,16 @@ public class Pump {
             transformedRecords = dbRecords;
         }
 
-        Observable<UserRecordResult> pubResults = transformedRecords.flatMap(
-                new Func1<Record, Observable<UserRecordResult>>() {
+        Observable<PumpRecordResult> pubResults = transformedRecords.flatMap(
+                new Func1<PumpRecord, Observable<PumpRecordResult>>() {
                     @Override
-                    public Observable<UserRecordResult> call(Record record) {
+                    public Observable<PumpRecordResult> call(PumpRecord pumpRecord) {
                         log.debug("Adding record to Kinesis Producer");
+
+                        Record kinesisRecord = pumpRecord.getKinesisRecord();
+
                         return ListenableFutureObservable.from(
-                                kinesisProducer.addUserRecord(pumpSettings.getStreamOut(), record.getPartitionKey(), record.getData()),
+                                combine(kinesisProducer.addUserRecord(pumpSettings.getStreamOut(), kinesisRecord.getPartitionKey(), kinesisRecord.getData()), pumpRecord.getDrillRow()),
                                 Schedulers.io());
                     }
                 });
@@ -158,13 +172,26 @@ public class Pump {
         return kinesisProducer.getOutstandingRecordsCount();
     }
 
+    //Combine Future<UserRecordResult> and Record
+    private ListenableFuture<PumpRecordResult> combine(ListenableFuture<UserRecordResult> futureUserRecordResult, final ResultRow resultRow) {
+
+        return Futures.transform(futureUserRecordResult, new AsyncFunction<UserRecordResult, PumpRecordResult>() {
+
+            public ListenableFuture<PumpRecordResult> apply(final UserRecordResult userRecordResult) throws Exception {
+                return Futures.immediateFuture(new PumpRecordResult(userRecordResult, resultRow));
+            }
+
+        });
+
+    }
+
     private static class JdbcRecordProducer extends SerializingProducer {
-        private final Subscriber<? super Record> subscriber;
+        private final Subscriber<? super PumpRecord> subscriber;
         private final ResultSet resultSet;
         private final Connection connection;
         private final PumpSettings pumpSettings;
 
-        public JdbcRecordProducer(Subscriber<? super Record> subscriber, ResultSet resultSet, Connection connection, PumpSettings pumpSettings) {
+        public JdbcRecordProducer(Subscriber<? super PumpRecord> subscriber, ResultSet resultSet, Connection connection, PumpSettings pumpSettings) {
             this.subscriber = subscriber;
             this.resultSet = resultSet;
             this.connection = connection;
@@ -182,7 +209,7 @@ public class Pump {
                     if (resultSet.next()) {
                         log.trace("Got a JDBC result record");
 
-                        subscriber.onNext(buildRecord(resultSet, pumpSettings.getPartitionKeyColumn(), pumpSettings.getRawDataColumn()));
+                        subscriber.onNext(getRecord(resultSet, pumpSettings.getPartitionKeyColumn(), pumpSettings.getRawDataColumn()));
                     } else {
                         subscriber.onCompleted();
                         keepGoing = false;
@@ -203,12 +230,12 @@ public class Pump {
             }
         }
 
-        private Record buildRecord(ResultSet resultSet, String partitionKeyColumn, String rawDataColumn) throws SQLException{
+        private PumpRecord getRecord(ResultSet resultSet, String partitionKeyColumn, String rawDataColumn) throws SQLException{
             Record record = new Record();
             record.withPartitionKey(resultSet.getString(partitionKeyColumn));
             record.withData(ByteBuffer.wrap(resultSet.getBytes(rawDataColumn)));
 
-            return record;
+            return new PumpRecord(record, DrillRepository.mapResultRow(resultSet));
         }
     }
 }

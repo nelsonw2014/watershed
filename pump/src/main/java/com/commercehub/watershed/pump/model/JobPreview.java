@@ -16,16 +16,8 @@ public class JobPreview {
         return count;
     }
 
-    public void setCount(Integer count) {
-        this.count = count;
-    }
-
     public List<Map<String, String>> getRows() {
         return rows;
-    }
-
-    public void setRows(List<Map<String, String>> rows) {
-        this.rows = rows;
     }
 
     @Override

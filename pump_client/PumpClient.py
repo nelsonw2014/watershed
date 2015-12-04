@@ -105,6 +105,7 @@ class PumpClient:
         if(not 'jobId' in job):
             return
 
+        print('Submitted job ID={}'.format(job["jobId"]))
         self.get_job(job['jobId'], poll_for_progress, True)
         return
 

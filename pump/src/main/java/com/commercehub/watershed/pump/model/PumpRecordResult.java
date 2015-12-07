@@ -3,7 +3,7 @@ package com.commercehub.watershed.pump.model;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
 
 /**
- * Holds results for the KinesisRecord and the row that was pulled from Drill.
+ * Holds results for the KinesisRecord (post-emission) and the row that was pulled from Drill.
  */
 public class PumpRecordResult {
     private UserRecordResult userRecordResult;

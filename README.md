@@ -84,3 +84,92 @@ provide a unified and de-duplicated SQL view spanning current and archived Amazo
         * `CLUSTER_ID` should be the Cluster ID of the cluster you want to query, i.e. `j-XXXXXXXXXXXXX`
         * `PRIVATE_KEY_FILE` should be the private key setup for your EMR configuration, i.e. `/path/to/key.pem`
         * `WATERSHED_CONFIG` should be the location of your configuration, i.e. `/path/to/defaults.json`
+        
+# pump
+Pump gives you a way to query, modify, and re-emit data to an Amazon Kinesis Stream.
+
+* Pump is deployed during watershed's "launch-cluster" command.
+
+
+# pump client
+Interact with pump via the pump client provided in the main watershed directory.
+
+```
+> python3 -m pump_client -h
+Client to manage and monitor Pump.
+
+positional arguments:
+  {create-job,preview-job,get-job,get-all-jobs}
+    create-job          Enqueue a job for Pump to work on.
+    preview-job         Preview a job before Pump runs it.
+    get-job             Retreive Job status from Pump.
+    get-all-jobs        Retreive all Jobs and their statuses from Pump.
+
+optional arguments:
+  -h, --help            show this help message and exit
+```
+
+## Create Job
+Submit a job to Pump - queries Drill, transforms records, emits to Kinesis stream.
+
+```
+> python3 -m pump_client create-job -h
+usage: /private/projects/watershed/pump_client create-job [-h] -q QUERY -s
+                                                          STREAM [-p]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -q QUERY, --query QUERY
+                        Specify the query Pump will use to pull records out of
+                        Drill.
+  -s STREAM, --stream STREAM
+                        Specify the Kinesis stream that Pump will emit records
+                        to.
+  -p, --show-progress   Poll Pump for progress of job
+```
+
+## Preview Job
+Preview a Job before running it - queries Drill and returns the first N results.
+
+```
+> python3 -m pump_client preview-job -h
+usage: /private/projects/watershed/pump_client preview-job [-h] -q QUERY -n
+                                                           NUM_RECORDS
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -q QUERY, --query QUERY
+                        Specify the query Pump will use to pull records out of
+                        Drill.
+  -n NUM_RECORDS, --num-records NUM_RECORDS
+                        Specify the number of records to return in the
+                        preview.
+```
+
+## Get Job
+After submitting, use this to retrieve a Job from Pump to see its status.
+
+```
+> python3 -m pump_client get-job -h
+usage: /private/projects/watershed/pump_client get-job [-h] -id JOB_ID [-p]
+                                                       [-t]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -id JOB_ID, --job-id JOB_ID
+                        Specify the Job ID to retrieve.
+  -p, --show-progress   Poll Pump for progress of job
+  -t, --summary-only    Only show summary information about the Job
+```
+
+## Get all Jobs
+Show all statuses for Jobs that have been submitted during the session.
+
+```
+> python3 -m pump_client get-all-jobs -h
+usage: /private/projects/watershed/pump_client get-all-jobs [-h] [-t]
+
+optional arguments:
+  -h, --help          show this help message and exit
+  -t, --summary-only  Only show summary information about the Job
+```

@@ -136,7 +136,7 @@ public class Job {
     }
 
     public String getMeanRatePretty() {
-        return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "∞ rec/s";
+        return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "--- rec/s";
     }
 
     @Override

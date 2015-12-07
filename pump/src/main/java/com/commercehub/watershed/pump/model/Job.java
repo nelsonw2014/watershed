@@ -233,7 +233,7 @@ public class Job {
      * @return a formatted string describing the mean rate
      */
     public String getMeanRatePretty() {
-        return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "∞ rec/s";
+        return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "--- rec/s";
     }
 
     @Override

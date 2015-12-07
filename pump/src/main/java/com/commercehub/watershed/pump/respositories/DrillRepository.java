@@ -24,10 +24,7 @@ public class DrillRepository implements QueryableRepository {
     private Provider<Connection> connectionProvider;
 
     /**
-     * Queries Drill for record count and a few preview records
-     * @param previewSettings
-     * @return JobPreview
-     * @throws SQLException
+     * {@inheritDoc}
      */
     @Override
     public JobPreview getJobPreview(PreviewSettings previewSettings) throws SQLException {

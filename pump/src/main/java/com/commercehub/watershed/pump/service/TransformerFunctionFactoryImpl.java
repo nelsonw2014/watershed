@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 
+/**
+ * Provides Functions to transform records.
+ */
 public class TransformerFunctionFactoryImpl implements TransformerFunctionFactory {
     private static final Logger log = LoggerFactory.getLogger(TransformerFunctionFactoryImpl.class);
 
@@ -19,10 +22,7 @@ public class TransformerFunctionFactoryImpl implements TransformerFunctionFactor
     private ObjectMapper objectMapper;
 
     /**
-     * Function that adds Replay and Overwrite flags to a JSON object.
-     * @param replayEnabled
-     * @param overwriteEnabled
-     * @return Function
+     * {@inheritDoc}
      */
     public Function<byte[], byte[]> getReplayFlagTransformFunction(Boolean replayEnabled, Boolean overwriteEnabled) {
         final BooleanNode replayEnabledNode = replayEnabled? BooleanNode.TRUE : BooleanNode.FALSE;

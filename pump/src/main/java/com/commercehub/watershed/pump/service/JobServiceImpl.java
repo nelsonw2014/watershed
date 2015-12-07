@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Provides a handful of methods to manage Jobs.
+ */
 public class JobServiceImpl implements JobService {
 
     @Inject
@@ -33,11 +36,9 @@ public class JobServiceImpl implements JobService {
 
     @Inject
     private JobFactory jobFactory;
-    
+
     /**
-     * Enqueue a Job for processing
-     * @param pumpSettings
-     * @return Job
+     * {@inheritDoc}
      */
     @Override
     public Job enqueueJob(PumpSettings pumpSettings) {
@@ -49,9 +50,7 @@ public class JobServiceImpl implements JobService {
     }
 
     /**
-     * Retrieve a Job from the in-memory Job map
-     * @param jobId
-     * @return Job
+     * {@inheritDoc}
      */
     @Override
     public Job getJob(String jobId) {
@@ -59,8 +58,7 @@ public class JobServiceImpl implements JobService {
     }
 
     /**
-     * Retrieve all Jobs from the in-memory Job map
-     * @return a list of Jobs
+     * {@inheritDoc}
      */
     @Override
     public Collection<Job> getAllJobs(){
@@ -68,10 +66,7 @@ public class JobServiceImpl implements JobService {
     }
 
     /**
-     * Submits a query for record count and a few preview records
-     * @param previewSettings
-     * @return JobPreview
-     * @throws SQLException
+     * {@inheritDoc}
      */
     @Override
     public JobPreview getJobPreview(PreviewSettings previewSettings) throws SQLException {

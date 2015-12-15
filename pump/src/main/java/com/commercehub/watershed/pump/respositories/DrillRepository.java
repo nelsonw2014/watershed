@@ -14,12 +14,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Repository that communicates with Drill.
+ */
 public class DrillRepository implements QueryableRepository {
     private static final Logger log = LoggerFactory.getLogger(DrillRepository.class);
 
     @Inject
     private Provider<Connection> connectionProvider;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public JobPreview getJobPreview(PreviewSettings previewSettings) throws SQLException {
         Connection connection = connectionProvider.get();
@@ -50,6 +56,13 @@ public class DrillRepository implements QueryableRepository {
         return new JobPreview(count, rows);
     }
 
+    /**
+     * Converts a ResultSet to a list of {@code Map<String, String>}
+     * @param resultSet
+     * @param rowLimit
+     * @return {@code List<Map<String, String>>}
+     * @throws SQLException
+     */
     private List<Map<String, String>> resultSetToList(ResultSet resultSet, Integer rowLimit) throws SQLException{
         List<Map<String, String>> list = new ArrayList<>();
         while (resultSet.next() && resultSet.getRow() < rowLimit){

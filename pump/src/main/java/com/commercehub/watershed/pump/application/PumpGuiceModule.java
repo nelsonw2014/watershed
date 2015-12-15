@@ -42,6 +42,10 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
+/**
+ * Setup Pump with Guice dependency injection.
+ */
 public class PumpGuiceModule extends AbstractModule {
     private static final String DEFAULT_PROPERTIES_FILE = "pump.properties";
     private static final Logger log = LoggerFactory.getLogger(PumpGuiceModule.class);
@@ -68,6 +72,10 @@ public class PumpGuiceModule extends AbstractModule {
         install(new FactoryModuleBuilder().implement(JobRunnable.class, JobRunnable.class).build(JobRunnableFactory.class));
     }
 
+    /**
+     *
+     * @return Application-wide Properties, defined in pump.properties
+     */
     @Provides
     @Singleton
     @Named("applicationProperties")
@@ -75,18 +83,30 @@ public class PumpGuiceModule extends AbstractModule {
         return defaultProperties;
     }
 
+    /**
+     *
+     * @return In-memory map for the Job list.
+     */
     @Provides
     @Singleton
     private Map<String, Job> getJobMap(){
         return jobMap;
     }
 
+    /**
+     *
+     * @return the configured instance of ObjectMapper
+     */
     @Provides
     @Singleton
     private ObjectMapper getObjectMapper(){
         return objectMapper;
     }
 
+    /**
+     *
+     * @return the configured instance of ObjectMapper
+     */
     private ObjectMapper configureObjectMapper(){
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JodaModule());
@@ -99,6 +119,11 @@ public class PumpGuiceModule extends AbstractModule {
         return objectMapper;
     }
 
+
+    /**
+     *
+     * @return load application properties from pump.properties
+     */
     private Properties getDefaultPropertiesFromFile() {
         Properties properties = new Properties();
         String propertyFileName = DEFAULT_PROPERTIES_FILE;
@@ -113,11 +138,24 @@ public class PumpGuiceModule extends AbstractModule {
         return properties;
     }
 
+
+
+    /**
+     *
+     * @param kinesisProducerConfiguration from the KinesisProducerConfiguration provider
+     * @return a provider for KinesisProducer
+     */
     @Provides
     private KinesisProducer kinesisProducerProvider(KinesisProducerConfiguration kinesisProducerConfiguration){
         return new KinesisProducer(kinesisProducerConfiguration);
     }
 
+
+    /**
+     *
+     * @param properties
+     * @return a provider for KinesisProducerConfiguration
+     */
     @Provides
     @Singleton
     private KinesisProducerConfiguration configureKinesis(@Named("applicationProperties") Properties properties) {
@@ -137,6 +175,12 @@ public class PumpGuiceModule extends AbstractModule {
         return kinesisConfig;
     }
 
+
+    /**
+     *
+     * @param kinesisConfig from the KinesisProducerConfiguration provider
+     * @return a provider for AmazonKinesisClient
+     */
     @Provides
     @Singleton
     private AmazonKinesisClient getKinesisClient(KinesisProducerConfiguration kinesisConfig){
@@ -145,6 +189,12 @@ public class PumpGuiceModule extends AbstractModule {
         return kinesisClient;
     }
 
+
+    /**
+     *
+     * @return a provider for Database
+     * @throws InterruptedException
+     */
     @Provides
     @Singleton
     private Database connectDatabase() throws InterruptedException {
@@ -180,11 +230,23 @@ public class PumpGuiceModule extends AbstractModule {
         return database;
     }
 
+
+    /**
+     *
+     * @param database from the database provider
+     * @return a provider for Connections
+     */
     @Provides
     private Connection connectionProvider(Database database){
         return database.getConnectionProvider().get();
     }
 
+
+    /**
+     *
+     * @param numConcurrentJobs allowed number of concurrent running Pump jobs
+     * @return a provider for ExecutorService
+     */
     @Provides
     @Singleton
     protected ExecutorService getExecutor(@Named("numConcurrentJobs") int numConcurrentJobs) {

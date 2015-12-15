@@ -15,6 +15,9 @@ import rx.Subscriber;
 import java.text.NumberFormat;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * A Subscriber for Pump that requests records and manages Job statistics
+ */
 public class PumpSubscriber extends Subscriber<PumpRecordResult> {
     private static final Logger log = LoggerFactory.getLogger(PumpSubscriber.class);
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
@@ -33,12 +36,14 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
             @Assisted Job job,
             @Assisted Pump pump,
             @Named("numRecordsPerChunk") int numRecordsPerChunk){
-
         this.job = job;
         this.pump = pump;
         this.numRecordsPerChunk = numRecordsPerChunk;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onStart(){
         if(job != null){
@@ -51,6 +56,9 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
         request(numRecordsPerChunk);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onCompleted() {
         if(pump != null){
@@ -66,6 +74,9 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
         }
     }
 
+    /**
+     * Populates Job with statistics for current state of Pump
+     */
     public void updateStats() {
         if(job != null){
             job.setSuccessfulRecordCount(successCount.get());
@@ -85,6 +96,9 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
                 (pump != null? NUM_FMT.format(pump.countPending()) : "unknown"));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onError(Throwable e) {
         log.error("General failure, aborting.", e);
@@ -100,6 +114,9 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onNext(PumpRecordResult pumpRecordResult) {
         log.trace("Got a Kinesis result.");

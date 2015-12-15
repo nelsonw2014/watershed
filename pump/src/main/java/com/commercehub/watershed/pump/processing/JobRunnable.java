@@ -1,14 +1,13 @@
 package com.commercehub.watershed.pump.processing;
 
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.application.factories.PumpFactory;
 import com.commercehub.watershed.pump.application.factories.PumpSubscriberFactory;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
+import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.PumpSettings;
 import com.commercehub.watershed.pump.service.TransformerFunctionFactory;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.assistedinject.Assisted;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +64,7 @@ public class JobRunnable implements Runnable {
             }
         }, "KPL shutdown hook"));
 
-        Observable<UserRecordResult> results = pump.build();
+        Observable<PumpRecordResult> results = pump.build();
         Subscription subscription = results.subscribe(pumpSubscriberFactory.create(job, pump));
         job.setPumpSubscription(subscription);
     }

@@ -32,6 +32,8 @@ public class Job {
 
     private ProcessingStage stage = ProcessingStage.NOT_STARTED;
 
+    private DrillResultRow lastSuccessfulRow;
+
     private PeriodFormatter formatter = new PeriodFormatterBuilder()
             .printZeroNever().appendHours().appendSuffix(" hour, ", " hours, ")
             .printZeroNever().appendMinutes().appendSuffix(" minute, ", " minutes, ")
@@ -236,6 +238,14 @@ public class Job {
         return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "--- rec/s";
     }
 
+    public DrillResultRow getLastSuccessfulRow() {
+        return lastSuccessfulRow;
+    }
+
+    public void setLastSuccessfulRow(DrillResultRow lastSuccessfulRow) {
+        this.lastSuccessfulRow = lastSuccessfulRow;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -249,9 +259,10 @@ public class Job {
             return false;
         if (pumpSubscription != null ? !pumpSubscription.equals(job.pumpSubscription) : job.pumpSubscription != null)
             return false;
+        if (lastSuccessfulRow != null ? !lastSuccessfulRow.equals(job.lastSuccessfulRow) : job.lastSuccessfulRow != null)
+            return false;
 
         return stage == job.stage;
-
     }
 
     @Override
@@ -260,6 +271,7 @@ public class Job {
         result = 31 * result + pumpSettings.hashCode();
         result = 31 * result + (processingErrors != null ? processingErrors.hashCode() : 0);
         result = 31 * result + (pumpSubscription != null ? pumpSubscription.hashCode() : 0);
+        result = 31 * result + (lastSuccessfulRow != null ? lastSuccessfulRow.hashCode() : 0);
         result = 31 * result + stage.hashCode();
         return result;
     }

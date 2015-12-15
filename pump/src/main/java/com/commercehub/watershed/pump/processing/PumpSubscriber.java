@@ -1,8 +1,9 @@
 package com.commercehub.watershed.pump.processing;
 
-import com.amazonaws.services.kinesis.producer.UserRecordResult;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
+import com.commercehub.watershed.pump.model.PumpRecordResult;
+import com.commercehub.watershed.pump.model.DrillResultRow;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A Subscriber for Pump that requests records and manages Job statistics
  */
-public class PumpSubscriber extends Subscriber<UserRecordResult> {
+public class PumpSubscriber extends Subscriber<PumpRecordResult> {
     private static final Logger log = LoggerFactory.getLogger(PumpSubscriber.class);
     private static final NumberFormat NUM_FMT = NumberFormat.getIntegerInstance();
 
@@ -27,6 +28,8 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
 
     private Job job;
     private Pump pump;
+
+    private DrillResultRow lastSuccessfulRow;
 
     @Inject
     public PumpSubscriber(
@@ -78,6 +81,7 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
         if(job != null){
             job.setSuccessfulRecordCount(successCount.get());
             job.setFailureRecordCount(failCount.get());
+            job.setLastSuccessfulRow(lastSuccessfulRow);
 
             if(pump != null){
                 job.setPendingRecordCount(pump.countPending());
@@ -114,10 +118,11 @@ public class PumpSubscriber extends Subscriber<UserRecordResult> {
      * {@inheritDoc}
      */
     @Override
-    public void onNext(UserRecordResult userRecordResult) {
+    public void onNext(PumpRecordResult pumpRecordResult) {
         log.trace("Got a Kinesis result.");
-        if (userRecordResult.isSuccessful()) {
+        if (pumpRecordResult.getUserRecordResult().isSuccessful()) {
             successCount.incrementAndGet();
+            lastSuccessfulRow = pumpRecordResult.getDrillResultRow();
         }
         else {
             failCount.incrementAndGet();

@@ -27,15 +27,6 @@ public class JobPreview {
     public Integer getCount() {
         return count;
     }
-
-    /**
-     * set the count of records in the query
-     * @param count
-     */
-    public void setCount(Integer count) {
-        this.count = count;
-    }
-
     /**
      *
      * @return a preview of rows that will be processed (usually a subset of the full query results)
@@ -43,15 +34,6 @@ public class JobPreview {
     public List<Map<String, String>> getRows() {
         return rows;
     }
-
-    /**
-     * set the row preview (usually a subset of the full query results)
-     * @param rows
-     */
-    public void setRows(List<Map<String, String>> rows) {
-        this.rows = rows;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

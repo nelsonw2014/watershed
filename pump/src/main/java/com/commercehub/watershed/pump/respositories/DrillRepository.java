@@ -1,9 +1,9 @@
 package com.commercehub.watershed.pump.respositories;
 
 
+import com.commercehub.watershed.pump.model.DrillResultRow;
 import com.commercehub.watershed.pump.model.JobPreview;
 import com.commercehub.watershed.pump.model.PreviewSettings;
-import com.commercehub.watershed.pump.model.ResultRow;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import org.slf4j.Logger;
@@ -60,19 +60,19 @@ public class DrillRepository implements QueryableRepository {
     }
 
 
-    public static ResultRow mapResultRow(ResultSet resultSet) throws SQLException{
+    public static DrillResultRow mapResultRow(ResultSet resultSet) throws SQLException{
         ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 
-        ResultRow resultRow = new ResultRow();
+        DrillResultRow drillResultRow = new DrillResultRow();
         for(int i = 1; i <= resultSetMetaData.getColumnCount(); i++){
             if(resultSetMetaData.getColumnType(i) == Types.BOOLEAN){
-                resultRow.put(resultSetMetaData.getColumnName(i), String.valueOf(resultSet.getBoolean(i)));
+                drillResultRow.put(resultSetMetaData.getColumnName(i), String.valueOf(resultSet.getBoolean(i)));
                 continue;
             }
 
-            resultRow.put(resultSetMetaData.getColumnName(i), new String(resultSet.getBytes(i)));
+            drillResultRow.put(resultSetMetaData.getColumnName(i), new String(resultSet.getBytes(i)));
         }
 
-        return resultRow;
+        return drillResultRow;
     }
 }

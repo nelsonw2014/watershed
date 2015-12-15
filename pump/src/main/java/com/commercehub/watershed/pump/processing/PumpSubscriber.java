@@ -3,7 +3,7 @@ package com.commercehub.watershed.pump.processing;
 import com.commercehub.watershed.pump.model.Job;
 import com.commercehub.watershed.pump.model.ProcessingStage;
 import com.commercehub.watershed.pump.model.PumpRecordResult;
-import com.commercehub.watershed.pump.model.ResultRow;
+import com.commercehub.watershed.pump.model.DrillResultRow;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
@@ -26,7 +26,7 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
     private Job job;
     private Pump pump;
 
-    private ResultRow lastSuccessfulRow;
+    private DrillResultRow lastSuccessfulRow;
 
     @Inject
     public PumpSubscriber(
@@ -105,7 +105,7 @@ public class PumpSubscriber extends Subscriber<PumpRecordResult> {
         log.trace("Got a Kinesis result.");
         if (pumpRecordResult.getUserRecordResult().isSuccessful()) {
             successCount.incrementAndGet();
-            lastSuccessfulRow = pumpRecordResult.getResultRow();
+            lastSuccessfulRow = pumpRecordResult.getDrillResultRow();
         }
         else {
             failCount.incrementAndGet();

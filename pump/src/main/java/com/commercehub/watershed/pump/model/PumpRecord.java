@@ -3,15 +3,15 @@ package com.commercehub.watershed.pump.model;
 import com.amazonaws.services.kinesis.model.Record;
 
 /**
- * Holds both a KinesisRecord (pre-emission) and the ResultRow retrieved from Drill.
+ * Holds both a KinesisRecord (pre-emission) and the DrillResultRow retrieved from Drill.
  */
 public class PumpRecord {
     Record kinesisRecord;
-    ResultRow drillRow;
+    DrillResultRow drillResultRow;
 
-    public PumpRecord(Record kinesisRecord, ResultRow drillRow) {
+    public PumpRecord(Record kinesisRecord, DrillResultRow drillResultRow) {
         this.kinesisRecord = kinesisRecord;
-        this.drillRow = drillRow;
+        this.drillResultRow = drillResultRow;
     }
 
     /**
@@ -24,9 +24,9 @@ public class PumpRecord {
 
     /**
      * Retrieve the Drill row
-     * @return ResultRow
+     * @return DrillResultRow
      */
-    public ResultRow getDrillRow() {
-        return drillRow;
+    public DrillResultRow getDrillResultRow() {
+        return drillResultRow;
     }
 }

@@ -3,10 +3,10 @@ package com.commercehub.watershed.pump.processing;
 import com.amazonaws.services.kinesis.model.Record;
 import com.amazonaws.services.kinesis.producer.KinesisProducer;
 import com.amazonaws.services.kinesis.producer.UserRecordResult;
+import com.commercehub.watershed.pump.model.DrillResultRow;
 import com.commercehub.watershed.pump.model.PumpRecord;
 import com.commercehub.watershed.pump.model.PumpRecordResult;
 import com.commercehub.watershed.pump.model.PumpSettings;
-import com.commercehub.watershed.pump.model.ResultRow;
 import com.commercehub.watershed.pump.respositories.DrillRepository;
 import com.commercehub.watershed.pump.service.KinesisService;
 import com.google.common.base.Function;
@@ -133,7 +133,7 @@ public class Pump {
                             .clone()
                             .withData(ByteBuffer.wrap(transformedData));
 
-                    return new PumpRecord(transformedKinesisRecord, pumpRecord.getDrillRow());
+                    return new PumpRecord(transformedKinesisRecord, pumpRecord.getDrillResultRow());
                 }
             });
         }
@@ -150,7 +150,7 @@ public class Pump {
                         Record kinesisRecord = pumpRecord.getKinesisRecord();
 
                         return ListenableFutureObservable.from(
-                                combine(kinesisProducer.addUserRecord(pumpSettings.getStreamOut(), kinesisRecord.getPartitionKey(), kinesisRecord.getData()), pumpRecord.getDrillRow()),
+                                combine(kinesisProducer.addUserRecord(pumpSettings.getStreamOut(), kinesisRecord.getPartitionKey(), kinesisRecord.getData()), pumpRecord.getDrillResultRow()),
                                 Schedulers.io());
                     }
                 });
@@ -175,12 +175,12 @@ public class Pump {
     }
 
     //Combine Future<UserRecordResult> and Record
-    private ListenableFuture<PumpRecordResult> combine(ListenableFuture<UserRecordResult> futureUserRecordResult, final ResultRow resultRow) {
+    private ListenableFuture<PumpRecordResult> combine(ListenableFuture<UserRecordResult> futureUserRecordResult, final DrillResultRow drillResultRow) {
 
         return Futures.transform(futureUserRecordResult, new AsyncFunction<UserRecordResult, PumpRecordResult>() {
 
             public ListenableFuture<PumpRecordResult> apply(final UserRecordResult userRecordResult) throws Exception {
-                return Futures.immediateFuture(new PumpRecordResult(userRecordResult, resultRow));
+                return Futures.immediateFuture(new PumpRecordResult(userRecordResult, drillResultRow));
             }
 
         });

@@ -29,7 +29,7 @@ public class Job {
 
     private ProcessingStage stage = ProcessingStage.NOT_STARTED;
 
-    private ResultRow lastSuccessfulRow;
+    private DrillResultRow lastSuccessfulRow;
 
     private PeriodFormatter formatter = new PeriodFormatterBuilder()
             .printZeroNever().appendHours().appendSuffix(" hour, ", " hours, ")
@@ -141,11 +141,11 @@ public class Job {
         return getElapsedTime() > 0 && getMeanRate() != null? String.format("%.1f rec/s", getMeanRate()) : "--- rec/s";
     }
 
-    public ResultRow getLastSuccessfulRow() {
+    public DrillResultRow getLastSuccessfulRow() {
         return lastSuccessfulRow;
     }
 
-    public void setLastSuccessfulRow(ResultRow lastSuccessfulRow) {
+    public void setLastSuccessfulRow(DrillResultRow lastSuccessfulRow) {
         this.lastSuccessfulRow = lastSuccessfulRow;
     }
 

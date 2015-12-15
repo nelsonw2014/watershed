@@ -7,11 +7,11 @@ import com.amazonaws.services.kinesis.producer.UserRecordResult;
  */
 public class PumpRecordResult {
     private UserRecordResult userRecordResult;
-    private ResultRow resultRow;
+    private DrillResultRow drillResultRow;
 
-    public PumpRecordResult(UserRecordResult userRecordResult, ResultRow resultRow) {
+    public PumpRecordResult(UserRecordResult userRecordResult, DrillResultRow drillResultRow) {
         this.userRecordResult = userRecordResult;
-        this.resultRow = resultRow;
+        this.drillResultRow = drillResultRow;
     }
 
     /**
@@ -26,7 +26,7 @@ public class PumpRecordResult {
      * Get the row that was pulled from Drill.
      * @return
      */
-    public ResultRow getResultRow() {
-        return resultRow;
+    public DrillResultRow getDrillResultRow() {
+        return drillResultRow;
     }
 }

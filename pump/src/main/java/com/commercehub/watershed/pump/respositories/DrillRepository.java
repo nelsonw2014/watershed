@@ -78,12 +78,7 @@ public class DrillRepository implements QueryableRepository {
 
         DrillResultRow drillResultRow = new DrillResultRow();
         for(int i = 1; i <= resultSetMetaData.getColumnCount(); i++){
-            if(resultSetMetaData.getColumnType(i) == Types.BOOLEAN){
-                drillResultRow.put(resultSetMetaData.getColumnName(i), String.valueOf(resultSet.getBoolean(i)));
-                continue;
-            }
-
-            drillResultRow.put(resultSetMetaData.getColumnName(i), new String(resultSet.getBytes(i)));
+            drillResultRow.put(resultSetMetaData.getColumnName(i), resultSet.getString(i));
         }
 
         return drillResultRow;

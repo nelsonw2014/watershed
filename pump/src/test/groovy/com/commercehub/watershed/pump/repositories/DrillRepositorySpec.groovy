@@ -4,14 +4,12 @@ import com.commercehub.watershed.pump.model.JobPreview
 import com.commercehub.watershed.pump.model.PreviewSettings
 import com.commercehub.watershed.pump.respositories.DrillRepository
 import com.google.inject.Provider
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
 import java.sql.Statement
-import java.sql.Types
 
 class DrillRepositorySpec extends Specification{
     DrillRepository drillRepository

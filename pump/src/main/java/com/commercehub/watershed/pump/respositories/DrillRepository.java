@@ -83,6 +83,11 @@ public class DrillRepository implements QueryableRepository {
                 continue;
             }
 
+            if(resultSetMetaData.getColumnType(i) == Types.BIGINT){
+                drillResultRow.put(resultSetMetaData.getColumnName(i), String.valueOf(resultSet.getLong(i)));
+                continue;
+            }
+
             drillResultRow.put(resultSetMetaData.getColumnName(i), new String(resultSet.getBytes(i)));
         }
 

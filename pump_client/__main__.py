@@ -38,7 +38,14 @@ def get_argument_parser():
     _show_progress_kwargs = dict(action="store_const", const=True, required=False, help="Poll Pump for progress of job")
 
     _summary_only_args = ["-t", "--summary-only"]
-    _summary_only_kwargs = dict(action="store_const", const=True, required=False, help="Only show summary information about the Job")
+    _summary_only_kwargs = dict(action="store_true", required=False, help="Only show summary information about the Job")
+
+    _replay_flag_args = ["-r", "--replay"]
+    _replay_flag_kargs = dict(action="store_true", required=False, help="Add replay flag to documents")
+
+    _overwrite_flag_args = ["-o", "--overwrite"]
+    _overwrite_flag_kargs = dict(action="store_true", required=False, help="Add overwrite flag to documents")
+
 
     parser = argparse.ArgumentParser(
         prog=os.path.dirname(__file__),
@@ -53,6 +60,8 @@ def get_argument_parser():
     create_job_parser.add_argument(*_query_args, **_query_kwargs)
     create_job_parser.add_argument(*_stream_args, **_stream_kwargs)
     create_job_parser.add_argument(*_show_progress_args, **_show_progress_kwargs)
+    create_job_parser.add_argument(*_replay_flag_args, **_replay_flag_kargs)
+    create_job_parser.add_argument(*_overwrite_flag_args, **_overwrite_flag_kargs)
 
     preview_job_parser = subparsers.add_parser('preview-job', help="Preview a job before Pump runs it.")
     preview_job_parser.set_defaults(which="preview-job")
@@ -83,7 +92,7 @@ if __name__ == "__main__":
     config = dict()
     if hasattr(args, 'which'):
         if args.which == "create-job":
-            pumpClient.create_job(args.query, args.stream, args.show_progress)
+            pumpClient.create_job(args.query, args.stream, args.show_progress, args.replay, args.overwrite)
               
         elif args.which == "get-job":
             pumpClient.get_job(args.job_id, args.show_progress, args.summary_only)

@@ -81,15 +81,19 @@ class PumpClient:
             print(json.dumps(job, sort_keys=True, indent=4, separators=(',', ': ')))
 
 
-    def create_job(self, query_in, stream_out, poll_for_progress):    
+    def create_job(self, query_in, stream_out, poll_for_progress, replay_flag, overwrite_flag):
         print('Creating job...')
         print('Query: {}'.format(query_in))
         print('Stream: {}'.format(stream_out))
         print('Polling?: {}'.format(poll_for_progress))
 
         url = self._base_url + '/jobs'
-        payload = { 'queryIn': query_in, 'streamOut': stream_out }
-
+        payload = {
+            'queryIn': query_in,
+            'streamOut': stream_out,
+            'hasReplayFlag': replay_flag,
+            'hasOverwriteFlag': overwrite_flag
+        }
         job = dict()
         try:
             r = requests.post(url, data=json.dumps(payload), headers={'content-type': 'application/json'})

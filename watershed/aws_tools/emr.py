@@ -13,7 +13,9 @@
 # limitations under the License.
 
 from time import sleep
+from urllib import parse
 
+from os import path
 import boto3
 
 from watershed.aws_tools.s3 import upload_stream_archive_configuration
@@ -252,7 +254,16 @@ def configure_stream_tables(cluster_id, s3_config=None, stream_configs=None, pro
 
 
 def configure_stream_archives(cluster_id, s3_config=None, archive_configs=None, profile='default'):
-    archives = {}
+    sample_dfs_url = "s3://" + s3_config["accessKey"] + ":" + parse.quote_plus(s3_config["secretKey"]) + "@" + s3_config["resourcesBucket"]
+    archives = {
+        # Adding entry for sample data
+        sample_dfs_url: [
+            {
+                "archive_path": "/" + path.join(s3_config["resourcesPrefix"], "sample_data"),
+                "archive_name": "sample_data"
+            }
+        ]
+    }
 
     for archive in archive_configs:
         dfs_url = archive['dfsUrl']

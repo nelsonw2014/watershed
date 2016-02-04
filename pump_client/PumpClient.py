@@ -41,6 +41,7 @@ class PumpClient:
         print('Job: {}'.format(job_id))
 
         url = self._base_url + '/jobs/' + job_id
+        job = None
 
         while True:
             job = dict()
@@ -63,7 +64,7 @@ class PumpClient:
 
             time.sleep(1)
 
-        return
+        return job
 
 
     def print_job(self, job, summary_only):
@@ -104,14 +105,14 @@ class PumpClient:
 
         if(not poll_for_progress):
             self.print_job(job, True)
-            return
+            return job
 
         if(not 'jobId' in job):
-            return
+            return job
 
         print('Submitted job ID={}'.format(job["jobId"]))
         self.get_job(job['jobId'], poll_for_progress, True)
-        return
+        return job
 
     def preview_job(self, query_in, num_records):
         print('Previewing job...')
@@ -134,4 +135,4 @@ class PumpClient:
             print(row)
 
         print('Total number of rows: {}'.format(jobPreview["count"]))
-        return
+        return jobPreview

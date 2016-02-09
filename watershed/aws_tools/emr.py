@@ -232,6 +232,10 @@ def terminate_emr_cluster(cluster_ids=None, profile='default'):
         print("Attempted to terminate the following cluster Ids:")
         for cluster_id in cluster_ids:
             print("  * '"+cluster_id+"'")
+        cw_client = boto3.session.Session(profile_name=profile).client("cloudwatch")
+        cw_client.delete_alarms(
+            AlarmNames=["Watershed is Idle for too long"]
+        )
     except Exception as aws_except:
         raise ValueError(aws_except)
 

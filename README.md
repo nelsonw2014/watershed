@@ -24,7 +24,7 @@ replay operation, without requiring this solution to mediate the flow of the str
 * Java 7 (for development of Pump)
     
 ###Wiki
-Any information you need can be found at our [wiki](https://github.com/commercehub-oss/watershed/wiki): 
+Any information you need can be found in our [wiki](https://github.com/commercehub-oss/watershed/wiki).
 
 ####Getting Started
 * [What is Watershed?](What-is-Watershed%3F)

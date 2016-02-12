@@ -27,15 +27,15 @@ replay operation, without requiring this solution to mediate the flow of the str
 Any information you need can be found in our [wiki](https://github.com/commercehub-oss/watershed/wiki).
 
 ####Getting Started
-* [What is Watershed?](What-is-Watershed%3F)
-* [Goals, Constraints, and Additional Information](Goals,-Constraints,-and-Additional-Information)
-* [Installing](Installing)
+* [What is Watershed?](https://github.com/commercehub-oss/watershed/wiki/What-is-Watershed%3F)
+* [Goals, Constraints, and Additional Information](https://github.com/commercehub-oss/watershed/wiki/Goals,-Constraints,-and-Additional-Information)
+* [Installing](https://github.com/commercehub-oss/watershed/wiki/Installing)
 
 ####Using Watershed
-* [How to use Watershed](How-to-use-Watershed)
-  * [Configuration JSON](How-to-use-Watershed#configuration-file)
-  * [Watershed CLI](How-to-use-Watershed#using-the-watershed-cli-tool)
-  * [Pump Client](How-to-use-Watershed#using-pump-client)
+* [How to use Watershed](https://github.com/commercehub-oss/watershed/wiki/How-to-use-Watershed)
+  * [Configuration JSON](https://github.com/commercehub-oss/watershed/wiki/How-to-use-Watershed#configuration-file)
+  * [Watershed CLI](https://github.com/commercehub-oss/watershed/wiki/How-to-use-Watershed#using-the-watershed-cli-tool)
+  * [Pump Client](https://github.com/commercehub-oss/watershed/wiki/How-to-use-Watershed#using-pump-client)
 
 ####More Information
-* [Expected Archival Data](Expected-Archival-Data)
+* [Expected Archival Data](https://github.com/commercehub-oss/watershed/wiki/Expected-Archival-Data)
